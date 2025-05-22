@@ -1,6 +1,6 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
 const mongoose = require("mongoose");
 require("dotenv").config();
 
@@ -19,7 +19,7 @@ mongoose
   })
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error("MongoDB Error:", err));
-  
+
 app.listen(process.env.PORT || 5000, () => {
   console.log('Server running on port', process.env.PORT || 5000);
 });
