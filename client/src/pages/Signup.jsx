@@ -13,7 +13,7 @@ export default function Signup() {
       const token = await userCredential.user.getIdToken();
 
       
-      await fetch("https://your-backend-url.com/api/users", {
+      await fetch("http://localhost:5000/api/auth/save-user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
