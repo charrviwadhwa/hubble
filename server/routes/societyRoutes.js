@@ -6,7 +6,7 @@ const User = require('../models/User');
 
 router.post('/', async (req, res) => {
   try {
-    const { name, description, logoUrl, adminId } = req.body;
+    const { name, description, logoUrl, adminId, members  } = req.body;
 
     
     const adminUser = await User.findById(adminId);
@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: "Invalid admin user" });
     }
 
-    const newSociety = new Society({ name, description, logoUrl, admin: adminId });
+    const newSociety = new Society({ name, description, logoUrl, admin: adminId, members  });
     await newSociety.save();
     res.status(201).json(newSociety);
   } catch (error) {
