@@ -5,7 +5,8 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "fire
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  
+  const [role, setRole] = useState(""); 
   const signup = async () => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -13,33 +14,31 @@ export default function AuthPage() {
     const token = await user.getIdToken();
     console.log("Signup successful", user);
 
-
-    // Send data to MongoDB via backend
-    await fetch("http://localhost:5000/api/users", {
+    await fetch("http://localhost:5000/api/saveuser", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        //"Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({
         email: user.email,
         uid: user.uid,
+        userType:role,
       }),
     });
 
-    console.log("User stored in MongoDB ✅");
+    console.log("User stored in MongoDB ");
   } catch (err) {
     console.error("Signup error:", err.message);
   }
 };
 
-
   const login = async () => {
     try {
       const user = await signInWithEmailAndPassword(auth, email, password);
-      console.log("✅ Login successful:", user);
+      console.log("Login successful:", user);
     } catch (err) {
-      console.error("❌ Login error:", err.message);
+      console.error("Login error:", err.message);
     }
   };
 
@@ -55,6 +54,11 @@ export default function AuthPage() {
         placeholder="Password"
         onChange={(e) => setPassword(e.target.value)}
       /><br />
+
+       <select onChange={(e) => setRole(e.target.value)}>
+        <option value="student">Student</option>
+        <option value="society-admin">Society Admin</option>
+      </select>
       <button onClick={signup}>Signup</button>
       <button onClick={login}>Login</button>
     </div>

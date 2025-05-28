@@ -4,7 +4,7 @@ import { signup } from "../services/authService";
 export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student"); 
+  const [role, setRole] = useState(""); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,7 +34,7 @@ export default function Signup() {
       <input type="password" onChange={(e) => setPassword(e.target.value)} required />
       <select onChange={(e) => setRole(e.target.value)}>
         <option value="student">Student</option>
-        <option value="society">Society Admin</option>
+        <option value="society-admin">Society Admin</option>
       </select>
       <button type="submit">Sign Up</button>
     </form>
