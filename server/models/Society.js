@@ -5,6 +5,6 @@ const Schema=new mongoose.Schema({
     logoUrl:String,
     admin:{type:mongoose.Schema.Types.ObjectId, ref:"User"},
     members:[{type:mongoose.Schema.Types.ObjectId, ref:"User"}],
-} ,{timestamp:true})
+} ,{timestamps:true})
 
 module.exports = mongoose.model("Society", Schema)
