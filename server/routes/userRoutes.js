@@ -4,9 +4,11 @@ const User = require("../models/User");
 
 // Save user route
 router.post("/saveuser", async (req, res) => {
-  console.log("POST /saveUser hit");
+  console.log("POST /saveuser hit");
+  console.log("Received body:", req.body);
 
   const { uid, email, userType } = req.body;
+ 
 
   try {
     const existingUser = await User.findOne({ uid });
