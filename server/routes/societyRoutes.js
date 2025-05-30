@@ -40,7 +40,6 @@ router.put('/:id/members', async (req, res) => {
     const { id } = req.params; 
     const { memberId } = req.body;
 
-    // Validate user
     const user = await User.findById(memberId);
     if (!user) return res.status(400).json({ message: "User not found" });
 
