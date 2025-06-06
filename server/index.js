@@ -30,9 +30,6 @@ mongoose.connect("mongodb://localhost:27017/hubbleDB", {
 // const User = mongoose.model("User", userSchema);
 
 
-
-
-
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
