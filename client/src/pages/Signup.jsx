@@ -10,17 +10,22 @@ export default function Signup() {
     e.preventDefault();
     try {
       const userCredential = await signup(email, password);
+      const user = userCredential.user;
       const token = await userCredential.user.getIdToken();
 
       
-      await fetch("http://localhost:5000/api/auth/save-user", {
+      await fetch("http://localhost:5000/api/save-user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ email, role }),
-      });
+        body: JSON.stringify({
+        email: user.email,
+        uid: user.uid,
+        userType:role,
+      }),
+    });
 
       alert("Signup successful");
     } catch (err) {

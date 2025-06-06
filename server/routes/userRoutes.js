@@ -4,7 +4,7 @@ const router = express.Router();
 const User = require("../models/User"); 
 
 // Save user route
-router.post("/saveuser", async (req, res) => {
+router.post("/save-user", async (req, res) => {
   console.log("POST /saveuser hit");
   console.log("Received body:", req.body);
 
