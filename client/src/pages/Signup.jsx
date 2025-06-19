@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { signup } from "../services/authService";
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock } from "react-icons/fa";
-
+import heroImage from "../assets/college.jpg";
 
 
 export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState(""); 
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +19,7 @@ export default function Signup() {
       const user = userCredential.user;
       const token = await userCredential.user.getIdToken();
 
-      
+      navigate('/dashboard');
       await fetch("http://localhost:5000/api/save-user", {
         method: "POST",
         headers: {
@@ -56,39 +58,99 @@ export default function Signup() {
 
 
   return (
-    <div className="min-h-screen bg-[#f8f6f4] flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-lg p-10 w-full max-w-md relative">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-1">Let's <span className="font-bold">Start Learning</span></h2>
-        <p className="text-sm text-gray-500 mb-6">Please login or sign up to continue</p>
+    <div className="min-h-screen flex">
+      {/* Left: Illustration & Message */}
+     <div className="relative w-full md:w-1/2 h-[350px] md:h-auto">
+        <img
+          src={heroImage}
+          alt="Campus illustration"
+          className="w-full h-full object-cover"
+        />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center border rounded-lg px-3 py-2 bg-gray-100">
-            <FaEnvelope className="text-gray-400 mr-2" />
-            <input type="email" placeholder="Your Email" className="bg-transparent w-full outline-none" onChange={e => setEmail(e.target.value)} required />
-          </div>
+        {/* Text over the image */}
+        {/* <div className="absolute inset-0 bg-black/30 flex flex-col justify-center items-center text-center text-white px-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
+            Join the Campus Community
+          </h1>
+          <p className="text-sm md:text-base max-w-md">
+            Be a part of all events and society buzz around you!
+          </p>
+        </div>
+      </div> */}
+       <div className="absolute inset-0 bg-black/40" />
 
-          <div className="flex items-center border rounded-lg px-3 py-2 bg-gray-100">
-            <FaLock className="text-gray-400 mr-2" />
-            <input type="password" placeholder="Your Password" className="bg-transparent w-full outline-none" onChange={e => setPassword(e.target.value)} required />
-          </div>
+  {/* Text over the overlay */}
+  <div className="absolute inset-0 flex flex-col justify-center items-center text-center text-white px-4 z-10">
+    <h1 className="text-3xl md:text-4xl font-bold mb-2 drop-shadow-lg">
+      Join the Campus Community
+    </h1>
+    <p className="text-sm md:text-base max-w-md drop-shadow-md">
+      Be a part of all events and society buzz around you!
+    </p>
+  </div>
+</div>
 
-           <div className="border rounded-lg px-3 py-2 bg-gray-100">
-            <select onChange={(e) => setRole(e.target.value)} value={role} required className="w-full bg-transparent outline-none">
-              <option value="" disabled>Select Role</option>
-              <option value="student">Student</option>
-              <option value="society-admin">Society Admin</option>
-            </select>
-          </div>
+      {/* Right: Signup Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-10 bg-white">
+        <div className="w-full max-w-md">
+          <h2 className="text-2xl font-bold mb-4">Sign Up to Hubble</h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Already have an account? <a href="/login" className="text-blue-600 font-semibold">Sign In</a>
+          </p>
 
-          <button type="submit" className="w-full bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600">Sign Up</button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="text"
+              placeholder="Full Name"
+              className="w-full border px-4 py-2 rounded-md focus:outline-none"
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border px-4 py-2 rounded-md focus:outline-none"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border px-4 py-2 rounded-md focus:outline-none"
+            />
 
-          <button type="button" className="w-full flex items-center justify-center border py-2 rounded-lg hover:bg-gray-100">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" className="w-5 h-5 mr-2" />
-            Google
-          </button>
+            {/* Role Buttons */}
+            <div className="flex justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setRole("student")}
+                className={`flex-1 border rounded-md py-2 font-medium ${
+                  role === "student" ? "bg-blue-100 border-blue-500 text-blue-700" : "bg-white"
+                }`}
+              >
+                Student
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole("society")}
+                className={`flex-1 border rounded-md py-2 font-medium ${
+                  role === "society" ? "bg-blue-100 border-blue-500 text-blue-700" : "bg-white"
+                }`}
+              >
+                Society
+              </button>
+            </div>
 
-          <p className="text-sm text-center mt-4">Already have an account? <Link to="/login" className="text-orange-500 font-medium">Login</Link></p>
-        </form>
+            <button
+              type="submit"
+              className="w-full bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 rounded-md"
+            >
+              Sign Up
+            </button>
+          </form>
+
+          <p className="text-xs text-center mt-6 text-gray-500">
+            By signing up, you agree to our <a href="#" className="text-blue-500">Terms of Use</a> and <a href="#" className="text-blue-500">Privacy Policy</a>.
+          </p>
+        </div>
       </div>
     </div>
   );
