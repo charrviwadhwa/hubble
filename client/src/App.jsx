@@ -9,6 +9,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import Features from "./components/Features";
 //import AuthPage from './components/AuthPage';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
        
         <Routes>
           <Route path="/" element={<Home />} />
+           <Route path="/features" element={<Features />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route

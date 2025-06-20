@@ -12,7 +12,9 @@ export default function Navbar() {
 
       {/* Links */}
       <ul className="hidden md:flex gap-6 text-gray-700 font-medium">
-        <li><a href="#features" className="hover:text-blue-600">Features</a></li>
+        <li><Link to="/features" className="text-gray-700 hover:text-black">
+          Features
+        </Link></li>
         <li><a href="#students" className="hover:text-blue-600">For Students</a></li>
         <li><a href="#societies" className="hover:text-blue-600">For Societies</a></li>
       </ul>

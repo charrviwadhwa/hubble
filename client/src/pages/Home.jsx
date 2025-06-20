@@ -1,18 +1,22 @@
 import React from "react";
 import Navbar from "../components/Navbar";
+import Features from "../components/Features";
 import { motion } from "framer-motion";
+import HowItWorks from "../components/HowItWorks";
+
 
 export default function Home() {
   return (
-    <div>
-      {/* Grid Background */}
+    <div className="relative">
+      {/* Grid Background (Wraps entire page) */}
       <div className="absolute inset-0 z-0 bg-[length:40px_40px] bg-[linear-gradient(to_right,#000000_1px,transparent_1px),linear-gradient(to_bottom,#000000_1px,transparent_1px)] opacity-50 pointer-events-none" />
 
-      <div className="relative z-10 min-h-screen bg-gradient-to-r from-yellow-50/90 to-blue-50/90">
+      {/* Main content with gradient */}
+      <div className="relative z-10 bg-gradient-to-r from-yellow-50/90 to-blue-50/90">
         <Navbar />
 
-        <div className="pt-32 text-center px-6">
-          {/* Tag */}
+        {/* Hero Section */}
+        <div className="pt-32 text-center px-6 min-h-screen">
           <motion.span
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -22,28 +26,25 @@ export default function Home() {
             🎓 The Future of University Event Management
           </motion.span>
 
-          {/* Heading */}
           <motion.h1
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="text-5xl font-bold bg-gradient-to-r from-yellow-700 via-gray-600 to-blue-600 text-transparent bg-clip-text"
+            className="text-5xl font-heading font-bold bg-gradient-to-r from-yellow-700 via-gray-600 to-blue-600 text-transparent bg-clip-text"
           >
             Connect. Discover. <br /> Experience.
           </motion.h1>
 
-          {/* Paragraph */}
           <motion.p
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
-            className="mt-6 text-gray-700 max-w-2xl mx-auto"
+            className="mt-6 font-sans text-gray-700 max-w-2xl mx-auto"
           >
             Hubble is the centralized platform that streamlines event management and participation across university societies.
             Discover events, connect with communities, and enhance your campus experience.
           </motion.p>
 
-          {/* Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -58,6 +59,10 @@ export default function Home() {
             </button>
           </motion.div>
         </div>
+
+        {/* Features Section */}
+        <Features />
+        <HowItWorks/>
       </div>
     </div>
   );
