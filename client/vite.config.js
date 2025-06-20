@@ -8,9 +8,9 @@ export default defineConfig({
    theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],        // for body
+                // for body
         heading: ['Sora', 'sans-serif'], 
-        serifDisplay: ['"DM Serif Display"', 'serif'],     // for headings
+        serifDisplay: ['"Playfair Display"', 'serif'],    // for headings
       },
     },
   },

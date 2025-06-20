@@ -1,6 +1,6 @@
 import React from "react";
 import Navbar from "../components/Navbar";
-import Features from "../components/Features";
+
 import { motion } from "framer-motion";
 import HowItWorks from "../components/HowItWorks";
 
@@ -59,9 +59,7 @@ export default function Home() {
             </button>
           </motion.div>
         </div>
-
         {/* Features Section */}
-        <Features />
         <HowItWorks/>
       </div>
     </div>
