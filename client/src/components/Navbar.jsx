@@ -6,8 +6,8 @@ export default function Navbar() {
   <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-[95%] md:w-[90%] lg:w-[80%] bg-white rounded-2xl shadow-md px-6 py-3 flex justify-between items-center">
       {/* Logo */}
       <div className="flex items-center space-x-2">
-        <div className="bg-gradient-to-r from-blue-500 to-yellow-400 text-white font-bold px-2 py-1 rounded-lg">H</div>
-        <span className="font-bold text-xl text-blue-900">Hubble</span>
+        {/* <div className="bg-gradient-to-r from-blue-500 to-yellow-400 text-white font-bold px-2 py-1 rounded-lg"></div> */}
+        <span className="font-bold text-xl text-blue-900">hubble</span>
       </div>
 
       {/* Links */}

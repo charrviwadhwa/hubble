@@ -8,14 +8,12 @@ import HowItWorks from "../components/HowItWorks";
 export default function Home() {
   return (
     <div className="relative">
-      {/* Grid Background (Wraps entire page) */}
+     
       <div className="absolute inset-0 z-0 bg-[length:40px_40px] bg-[linear-gradient(to_right,#000000_1px,transparent_1px),linear-gradient(to_bottom,#000000_1px,transparent_1px)] opacity-50 pointer-events-none" />
 
-      {/* Main content with gradient */}
       <div className="relative z-10 bg-gradient-to-r from-yellow-50/90 to-blue-50/90">
         <Navbar />
 
-        {/* Hero Section */}
         <div className="pt-32 text-center px-6 min-h-screen">
           <motion.span
             initial={{ opacity: 0, y: -20 }}
