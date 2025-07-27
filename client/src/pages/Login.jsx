@@ -36,7 +36,7 @@ export default function Login() {
 
   return (
      <div className="min-h-screen flex">
-      {/* LEFT SECTION: Image + Overlay Text */}
+     
       <div className="relative w-full md:w-1/2 h-[350px] md:h-auto">
         <img
           src={loginImage}
@@ -54,7 +54,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* RIGHT SECTION: Login Form */}
+      
       <div className="w-full md:w-1/2 flex items-center justify-center p-10 bg-white">
         <div className="w-full max-w-md">
         <h1 className="text-3xl font-bold mb-6">Login to Hubble</h1>
