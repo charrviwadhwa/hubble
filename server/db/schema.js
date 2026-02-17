@@ -1,26 +1,28 @@
-import { pgTable, serial, text, timestamp, integer, varchar } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, timestamp, integer } from "drizzle-orm/pg-core";
 
-// Societies: The organizers
-export const societies = pgTable("societies", {
+export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 256 }).notNull(),
-  adminEmail: varchar("admin_email", { length: 256 }).unique().notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).unique().notNull(),
+  password: text("password").notNull(),
+  role: varchar("role", { length: 50 }).default("student"), // 'student' or 'admin'
 });
 
-// Events: The core content
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
-  societyId: integer("society_id").references(() => societies.id),
-  title: varchar("title", { length: 256 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  eventDate: timestamp("event_date").notNull(),
+  date: timestamp("date").notNull(),
+  location: varchar("location", { length: 255 }),
   capacity: integer("capacity").default(100),
+  // New: Category column (e.g., 'Tech', 'Cultural', 'Workshop')
+  category: varchar("category", { length: 100 }).default("General"), 
+  createdBy: integer("created_by").references(() => users.id),
 });
 
-// Registrations: Who is going where
 export const registrations = pgTable("registrations", {
   id: serial("id").primaryKey(),
-  eventId: integer("event_id").references(() => events.id),
-  studentEmail: varchar("student_email", { length: 256 }).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  eventId: integer("event_id").references(() => events.id).notNull(),
   registeredAt: timestamp("registered_at").defaultNow(),
 });
