@@ -8,13 +8,13 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './context/AuthContext';
+
 
 //import AuthPage from './components/AuthPage';
 
 function App() {
   return (
-    <AuthProvider>
+  
       <Router>
        
         <Routes>
@@ -31,7 +31,7 @@ function App() {
           />
         </Routes>
       </Router>
-    </AuthProvider>
+   
   );
 }
 export default App;

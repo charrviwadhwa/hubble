@@ -9,20 +9,34 @@ const router = express.Router();
 // 1. Get all events (Public - for the Feed)
 import { ilike } from 'drizzle-orm'; // Import ilike
 
+// Updated Get all events (Public - with Search & Filtering)
 router.get('/', async (req, res) => {
-  const { category } = req.query;
+  const { category, q } = req.query; // 'q' is our search keyword
 
   try {
     let query = db.select().from(events);
+    const conditions = [];
 
+    // 1. Filter by category if provided
     if (category) {
-      // Use ilike for case-insensitive matching
-      query = query.where(ilike(events.category, category));
+      conditions.push(ilike(events.category, category));
+    }
+
+    // 2. Search in title if 'q' is provided
+    if (q) {
+      // %${q}% matches any title containing the search term
+      conditions.push(ilike(events.title, `%${q}%`));
+    }
+
+    // Combine conditions with 'and'
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
     }
 
     const allEvents = await query.orderBy(desc(events.date));
     res.json(allEvents);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to fetch events" });
   }
 });

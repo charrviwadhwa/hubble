@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { login } from "../services/authService";
+
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import loginImage from "../assets/college.jpg";
@@ -13,12 +13,24 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const userCredential = await login(email, password);
-      const token = await userCredential.user.getIdToken();
-      navigate('/dashboard');
-      alert("Login successful");
+      const response = await fetch("http://localhost:3001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // data.token is what our backend returns
+        localStorage.setItem('token', data.token); 
+        alert("Login successful");
+        navigate('/dashboard');
+      } else {
+        alert(data.message || "Invalid credentials");
+      }
     } catch (err) {
-      alert(err.message);
+      alert("Connection error");
     }
   };
 

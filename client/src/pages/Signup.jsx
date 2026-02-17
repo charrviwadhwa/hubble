@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signup } from "../services/authService";
+
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock } from "react-icons/fa";
@@ -7,6 +7,7 @@ import heroImage from "../assets/college.jpg";
 
 
 export default function Signup() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState(""); 
@@ -14,28 +15,32 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Create the payload for our custom backend
+    const userData = {
+      name: name, // Ensure you've added the 'name' state
+      email: email,
+      password: password,
+      role: role === "society" ? "admin" : "student",
+    };
+
     try {
-      const userCredential = await signup(email, password);
-      const user = userCredential.user;
-      const token = await userCredential.user.getIdToken();
-
-      navigate('/dashboard');
-      await fetch("http://localhost:5000/api/save-user", {
+      const response = await fetch("http://localhost:3001/api/auth/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-        email: user.email,
-        uid: user.uid,
-        userType:role,
-      }),
-    });
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
 
-      alert("Signup successful");
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Signup successful! Please login.");
+        navigate('/login');
+      } else {
+        alert(data.message || "Signup failed");
+      }
     } catch (err) {
-      alert(err.message);
+      alert("Server is down. Check if your Node.js app is running on 3001.");
     }
   };
 
@@ -102,6 +107,7 @@ export default function Signup() {
             <input
               type="text"
               placeholder="Full Name"
+              onChange={(e) => setName(e.target.value)}
               className="w-full border px-4 py-2 rounded-md focus:outline-none"
             />
             <input
