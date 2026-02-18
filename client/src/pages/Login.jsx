@@ -1,109 +1,95 @@
-import { useState } from "react";
+﻿import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import loginImage from '../assets/college.jpg';
 
-import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
-import loginImage from "../assets/college.jpg";
-
+const headingFont = { fontFamily: 'Playfair, serif' };
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await fetch("http://localhost:3001/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // data.token is what our backend returns
-        localStorage.setItem('token', data.token); 
-        alert("Login successful");
+        localStorage.setItem('token', data.token);
+        alert('Login successful');
         navigate('/dashboard');
       } else {
-        alert(data.message || "Invalid credentials");
+        alert(data.message || 'Invalid credentials');
       }
-    } catch (err) {
-      alert("Connection error");
+    } catch (error) {
+      alert('Connection error');
     }
   };
 
-//   return (
-//     <form onSubmit={handleLogin}>
-//       <input type="email" onChange={(e) => setEmail(e.target.value)} required />
-//       <input type="password" onChange={(e) => setPassword(e.target.value)} required />
-//       <button type="submit">Login</button>
-//     </form>
-//   );
-// }
-
-
-
-
   return (
-     <div className="min-h-screen flex">
-     
-      <div className="relative w-full md:w-1/2 h-[350px] md:h-auto">
-        <img
-          src={loginImage}
-          alt="Campus"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 flex flex-col justify-center items-center text-white px-6 text-center z-10">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3 drop-shadow-lg">
-            Welcome Back!
-          </h2>
-          <p className="text-md md:text-lg drop-shadow-md max-w-md">
-            Dive back into your campus community – connect, explore, and engage.
+    <div className="min-h-screen bg-[#f3efe8] p-4 md:p-8">
+      <div className="mx-auto grid max-w-[1120px] overflow-hidden rounded-[30px] border border-black/10 bg-[#f7f3ec] shadow-[0_12px_30px_rgba(0,0,0,0.08)] md:grid-cols-2">
+        <section className="anim-rise relative bg-[#161616] p-8 text-white md:p-10">
+          <p className="inline-flex rounded-full border border-white/30 px-3 py-1 text-xs tracking-wide text-white/80">Welcome Back</p>
+          <h1 className="mt-5 text-5xl leading-[1.02] md:text-6xl" style={headingFont}>
+            Continue your
+            <br />
+            Hubble journey.
+          </h1>
+          <p className="mt-4 max-w-sm text-sm text-white/70">
+            Sign in to manage events, discover communities, and track your registrations.
           </p>
-        </div>
-      </div>
 
-      
-      <div className="w-full md:w-1/2 flex items-center justify-center p-10 bg-white">
-        <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-6">Login to Hubble</h1>
-        <p className="text-sm text-gray-500 mb-4">
-          Don’t have an account?{" "}
-          <Link to="/signup" className="text-blue-600 font-semibold hover:underline">
-            Sign Up
-          </Link>
-        </p>
+          <div className="anim-float mt-8 overflow-hidden rounded-3xl border border-white/20 bg-white/10">
+            <img src={loginImage} alt="Campus" className="h-[280px] w-full object-cover opacity-90" />
+          </div>
+        </section>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none "
-          />
-          <input
-            type="password"
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none "
-          />
-          <button
-            type="submit"
-            className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 rounded-md transition"
-          >
-            Login
-          </button>
-        </form>
+        <section className="anim-fade flex items-center p-6 md:p-10">
+          <div className="w-full">
+            <h2 className="text-4xl text-[#121212]" style={headingFont}>Login</h2>
+            <p className="mt-2 text-sm text-black/60">
+              New to Hubble?{' '}
+              <Link to="/signup" className="font-semibold text-[#ff6b35] hover:underline">
+                Create account
+              </Link>
+            </p>
 
-        <p className="text-xs text-center text-gray-400 mt-6">
-          By logging in, you agree to our{" "}
-          <span className="underline cursor-pointer">Terms of Use</span> and{" "}
-          <span className="underline cursor-pointer">Privacy Policy</span>.
-        </p>
-      </div>
+            <form onSubmit={handleLogin} className="mt-7 space-y-4">
+              <input
+                type="email"
+                required
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email address"
+                className="w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-sm outline-none transition focus:border-black"
+              />
+              <input
+                type="password"
+                required
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="w-full rounded-2xl border border-black/15 bg-white px-4 py-3 text-sm outline-none transition focus:border-black"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-full bg-[#ff6b35] px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#ff5720]"
+              >
+                Login
+              </button>
+            </form>
+
+            <p className="mt-6 text-xs text-black/50">
+              By logging in, you agree to our Terms and Privacy Policy.
+            </p>
+          </div>
+        </section>
       </div>
     </div>
   );

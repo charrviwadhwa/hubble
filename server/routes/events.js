@@ -3,7 +3,7 @@ import { db } from '../db/index.js';
 import { events } from '../db/schema.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { desc, eq, and, count } from 'drizzle-orm';
-import { registrations, users } from '../db/schema.js';
+import { registrations, users, societies } from '../db/schema.js';
 const router = express.Router();
 
 // 1. Get all events (Public - for the Feed)
@@ -43,28 +43,39 @@ router.get('/', async (req, res) => {
 
 // 2. Create an event (Protected - Admin Only)
 router.post('/', authenticateToken, async (req, res) => {
-  // Make sure 'category' is included here!
-  const { title, description, date, location, capacity, category } = req.body;
+  const { title, description, date, location, capacity, category, societyId } = req.body;
 
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: "Only societies can create events" });
+  // 1. Mandatory Check: Must provide a Society ID
+  if (!societyId) {
+    return res.status(400).json({ message: "An event must be hosted by a society." });
   }
 
   try {
+    // 2. Security Check: Does the current user own this society?
+    const societyOwner = await db.select()
+      .from(societies)
+      .where(eq(societies.id, societyId))
+      .limit(1);
+
+    if (societyOwner.length === 0 || societyOwner[0].ownerId !== req.user.id) {
+      return res.status(403).json({ message: "You are not an admin for this society." });
+    }
+
+    // 3. Insert Event with the societyId link
     const newEvent = await db.insert(events).values({
       title,
       description,
       date: new Date(date),
       location,
       capacity: capacity ? parseInt(capacity) : 100,
-      // If category is provided in Postman, use it; otherwise, use "General"
-      category: category || "General", 
+      category: category || "General",
+      societyId: societyId, // Link event to the society
       createdBy: req.user.id 
     }).returning();
 
     res.status(201).json(newEvent[0]);
   } catch (err) {
-    console.error("FULL DATABASE ERROR:", err); 
+    console.error("EVENT CREATION ERROR:", err);
     res.status(400).json({ error: "Could not create event", details: err.message });
   }
 });
@@ -109,15 +120,19 @@ router.post('/:id/register', authenticateToken, async (req, res) => {
 router.get('/:id/attendees', authenticateToken, async (req, res) => {
   const eventId = parseInt(req.params.id);
 
-  // Security check: You could add a check here to ensure 
-  // only the creator of the event can see the attendee list.
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: "Access denied. Admins only." });
-  }
-
   try {
-    // We join the 'registrations' table with the 'users' table 
-    // to get the actual names and emails of the people who signed up.
+    // 1. First, find the event to check who created it
+    const [event] = await db.select().from(events).where(eq(events.id, eventId));
+
+    if (!event) return res.status(404).json({ message: "Event not found" });
+
+    // 2. Security check: Only the creator of the event can see the list
+    // This allows any student who created a society/event to manage it
+    if (event.createdBy !== req.user.id) {
+      return res.status(403).json({ message: "Access denied. You are not the organizer of this event." });
+    }
+
+    // 3. Fetch the list
     const attendeeList = await db
       .select({
         studentName: users.name,
@@ -203,6 +218,32 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to delete event." });
+  }
+});
+// Get all users who registered for ANY event I created
+router.get('/organizer/all-stats', authenticateToken, async (req, res) => {
+  try {
+    const stats = await db
+      .select({
+        eventTitle: events.title,
+        studentName: users.name,
+        studentEmail: users.email,
+        // Explicitly specify registrations.createdAt to avoid ambiguity
+        registrationDate: registrations.createdAt 
+      })
+      .from(registrations)
+      .innerJoin(events, eq(registrations.eventId, events.id))
+      .innerJoin(users, eq(registrations.userId, users.id))
+      .where(eq(events.createdBy, req.user.id)); // Events created by the logged-in student
+
+    res.json(stats);
+  } catch (err) {
+    // Check your terminal for the detailed error log!
+    console.error("DETAILED DB ERROR:", err); 
+    res.status(500).json({ 
+      error: "Failed to fetch organizer stats", 
+      details: err.message 
+    });
   }
 });
 export default router;

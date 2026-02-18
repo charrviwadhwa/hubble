@@ -17,7 +17,8 @@ export const events = pgTable("events", {
   capacity: integer("capacity").default(100),
   // New: Category column (e.g., 'Tech', 'Cultural', 'Workshop')
   category: varchar("category", { length: 100 }).default("General"), 
-  createdBy: integer("created_by").references(() => users.id),
+  societyId: integer('society_id').references(() => societies.id),
+  createdBy: integer('created_by').references(() => users.id),
 });
 
 export const registrations = pgTable("registrations", {
@@ -25,4 +26,13 @@ export const registrations = pgTable("registrations", {
   userId: integer("user_id").references(() => users.id).notNull(),
   eventId: integer("event_id").references(() => events.id).notNull(),
   registeredAt: timestamp("registered_at").defaultNow(),
+});
+
+export const societies = pgTable('societies', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  logo: text('logo'),
+  ownerId: integer('owner_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
 });

@@ -1,144 +1,233 @@
-import React from "react";
-import Navbar from "../components/Navbar";
-import { motion } from "framer-motion";
+import { Link } from 'react-router-dom';
 
-import img1 from "../assets/hello2.jpg";
-import img2 from "../assets/hello3.jpg";
-import img3 from "../assets/hello4.jpg";
-import Features from "../components/Features";
+import heroA from '../assets/hello2.jpg';
+import heroB from '../assets/hello3.jpg';
+import heroC from '../assets/hello4.jpg';
+import workA from '../assets/events.png';
+import workB from '../assets/routeing.png';
+import workC from '../assets/calender.png';
+import faceA from '../assets/friends.png';
+import faceB from '../assets/7605885.jpg';
+import faceC from '../assets/college.jpg';
+
+const headingFont = { fontFamily: 'Playfair, serif' };
 
 export default function Home() {
   return (
-    <div className="relative bg-[#fefaf5] overflow-hidden">
-      {/* Top yellow arc (SVG for smoother curve) */}
-      <div className="absolute inset-x-0 top-0 -z-10">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1440 320"
-          className="w-full h-56"
-        >
-          <path
-            fill="#facc15"
-            d="M0,224L48,192C96,160,192,96,288,85.3C384,75,480,117,576,128C672,139,768,117,864,117.3C960,117,1056,139,1152,165.3C1248,192,1344,224,1392,240L1440,256L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-          />
-        </svg>
+    <div id="Top" className="min-h-screen bg-[#f3efe8] text-[#131313]">
+      <div className="mx-auto max-w-[1200px] px-4 pb-14 pt-6 md:px-8">
+        <header className="anim-fade sticky top-4 z-30 rounded-2xl border border-black/10 bg-[#f7f3ec]/95 px-5 py-4 backdrop-blur md:px-7">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-2xl font-semibold tracking-tight">Hubble<span className="text-[#ff6b35]">.</span></p>
+            <nav className="hidden items-center gap-8 text-sm md:flex">
+              <a href="#about" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">About</a>
+              <a href="#services" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Services</a>
+              <a href="#work" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Work</a>
+              <a href="#pricing" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Pricing</a>
+            </nav>
+            <div className="flex items-center gap-3">
+              <Link to="/login" className="text-sm transition hover:opacity-60">Login</Link>
+              <Link to="/signup" className="rounded-full border border-black px-4 py-2 text-sm transition hover:-translate-y-0.5 hover:bg-black hover:text-white">Get Started</Link>
+            </div>
+          </div>
+        </header>
+
+        <section className="anim-rise mt-7 overflow-hidden rounded-[30px] bg-[#161616] px-5 py-10 text-white md:px-10 md:py-14">
+          <div className="grid items-center gap-8 lg:grid-cols-[1.1fr,0.9fr]">
+            <div>
+              <p className="mb-5 inline-flex rounded-full border border-white/30 px-4 py-1 text-xs tracking-wide text-white/80">Creative Student Platform</p>
+              <h1 className="text-5xl leading-[1.02] md:text-7xl" style={headingFont}>
+                Build smart,
+                <br />
+                unforgettable
+                <br />
+                learning brands.
+              </h1>
+              <p className="mt-5 max-w-lg text-sm text-white/70 md:text-base">
+                Inspired by premium CMS landing pages, tailored for Hubble. We blend strong visual identity with conversion-focused sections.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link to="/signup" className="rounded-full bg-[#ff6b35] px-6 py-3 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-[#ff5720]">Start project</Link>
+                <button className="rounded-full border border-white/40 px-6 py-3 text-sm transition hover:-translate-y-0.5 hover:bg-white hover:text-black">View process</button>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="anim-float sm:col-span-2 h-52 overflow-hidden rounded-3xl bg-white/10">
+                <img src={heroA} alt="Hero" className="h-full w-full object-cover" />
+              </div>
+              <div className="anim-float h-44 overflow-hidden rounded-3xl bg-white/10" style={{ animationDelay: '0.3s' }}>
+                <img src={heroB} alt="Student" className="h-full w-full object-cover" />
+              </div>
+              <div className="anim-float h-44 overflow-hidden rounded-3xl bg-white/10" style={{ animationDelay: '0.6s' }}>
+                <img src={heroC} alt="Student" className="h-full w-full object-cover" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-4 border-t border-white/20 pt-6 md:grid-cols-3">
+            <div>
+              <p className="text-3xl font-semibold">120+</p>
+              <p className="text-sm text-white/70">Projects completed</p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold">95%</p>
+              <p className="text-sm text-white/70">Client retention rate</p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold">4.9/5</p>
+              <p className="text-sm text-white/70">Average satisfaction</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="services" className="anim-rise mt-16">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <h2 className="text-4xl md:text-6xl" style={headingFont}>What we can do</h2>
+            <p className="max-w-sm text-sm text-black/60">Everything needed to launch and grow a modern education brand.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <article className="rounded-3xl border border-black/10 bg-white p-6 transition duration-300 hover:-translate-y-1 hover:shadow-md">
+              <p className="text-xs uppercase tracking-[0.2em] text-black/50">01</p>
+              <h3 className="mt-3 text-2xl" style={headingFont}>Brand Identity</h3>
+              <p className="mt-3 text-sm text-black/65">Naming, messaging, visual language, and design systems with memorable direction.</p>
+            </article>
+            <article className="rounded-3xl border border-black/10 bg-white p-6 transition duration-300 hover:-translate-y-1 hover:shadow-md">
+              <p className="text-xs uppercase tracking-[0.2em] text-black/50">02</p>
+              <h3 className="mt-3 text-2xl" style={headingFont}>Web Design</h3>
+              <p className="mt-3 text-sm text-black/65">Pixel-precise landing pages with CMS-ready layout, typography, and art direction.</p>
+            </article>
+            <article className="rounded-3xl border border-black/10 bg-white p-6 transition duration-300 hover:-translate-y-1 hover:shadow-md">
+              <p className="text-xs uppercase tracking-[0.2em] text-black/50">03</p>
+              <h3 className="mt-3 text-2xl" style={headingFont}>Growth Support</h3>
+              <p className="mt-3 text-sm text-black/65">Ongoing optimization, funnel analysis, and creative experiments to scale results.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="about" className="anim-rise mt-16 grid gap-5 lg:grid-cols-[1fr,1fr]">
+          <article className="rounded-3xl bg-[#ece6dc] p-6 md:p-8">
+            <p className="text-xs uppercase tracking-[0.2em] text-black/55">About Agency</p>
+            <h2 className="mt-3 text-4xl md:text-5xl" style={headingFont}>We create digital experiences that convert.</h2>
+            <p className="mt-4 text-sm text-black/65">Our process combines strategy, copy, and interface craft to make each section purposeful and conversion-led.</p>
+            <div className="mt-6 flex flex-wrap gap-2 text-sm">
+              <button className="rounded-full bg-black px-4 py-2 text-white">Design</button>
+              <button className="rounded-full border border-black/20 px-4 py-2">Strategy</button>
+              <button className="rounded-full border border-black/20 px-4 py-2">Development</button>
+            </div>
+          </article>
+          <div className="overflow-hidden rounded-3xl bg-white p-3">
+            <img src={workA} alt="Work preview" className="h-full w-full rounded-2xl object-cover" />
+          </div>
+        </section>
+
+        <section id="work" className="anim-rise mt-16">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-4xl md:text-6xl" style={headingFont}>Featured work</h2>
+            <a href="#Top" className="text-sm underline underline-offset-4">Back to top</a>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <article className="overflow-hidden rounded-3xl border border-black/10 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-md">
+              <img src={workA} alt="Project one" className="h-64 w-full object-cover" />
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-[0.2em] text-black/50">Education</p>
+                <h3 className="mt-2 text-3xl" style={headingFont}>Classroom Product Launch</h3>
+              </div>
+            </article>
+            <article className="overflow-hidden rounded-3xl border border-black/10 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-md">
+              <img src={workB} alt="Project two" className="h-64 w-full object-cover" />
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-[0.2em] text-black/50">SaaS</p>
+                <h3 className="mt-2 text-3xl" style={headingFont}>Smart Enrollment Experience</h3>
+              </div>
+            </article>
+            <article className="overflow-hidden rounded-3xl border border-black/10 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-md md:col-span-2">
+              <img src={workC} alt="Project three" className="h-72 w-full object-cover" />
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-[0.2em] text-black/50">Platform</p>
+                <h3 className="mt-2 text-3xl" style={headingFont}>Hubble Dashboard System</h3>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="pricing" className="mt-16 grid gap-4 md:grid-cols-3">
+          <article className="rounded-3xl border border-black/10 bg-white p-6">
+            <h3 className="text-2xl" style={headingFont}>Starter</h3>
+            <p className="mt-2 text-4xl font-semibold">$499</p>
+            <p className="mt-3 text-sm text-black/60">One-page layout and essential content setup.</p>
+          </article>
+          <article className="rounded-3xl border border-black bg-[#111] p-6 text-white">
+            <h3 className="text-2xl" style={headingFont}>Growth</h3>
+            <p className="mt-2 text-4xl font-semibold">$1,499</p>
+            <p className="mt-3 text-sm text-white/70">Multi-section build with CMS-like structure.</p>
+          </article>
+          <article className="rounded-3xl border border-black/10 bg-white p-6">
+            <h3 className="text-2xl" style={headingFont}>Scale</h3>
+            <p className="mt-2 text-4xl font-semibold">Custom</p>
+            <p className="mt-3 text-sm text-black/60">Advanced design systems and growth support.</p>
+          </article>
+        </section>
+
+        <section className="mt-16 grid gap-4 lg:grid-cols-[1.1fr,0.9fr]">
+          <article className="rounded-3xl border border-black/10 bg-white p-6 md:p-8">
+            <p className="text-xs uppercase tracking-[0.2em] text-black/50">Testimonials</p>
+            <h2 className="mt-3 text-4xl md:text-5xl" style={headingFont}>People love working with us.</h2>
+            <p className="mt-4 text-base text-black/70">"Their design process is clear, fast, and genuinely strategic. We launched with clarity and confidence."</p>
+            <div className="mt-6 flex items-center gap-3">
+              <img src={faceA} alt="Client" className="h-12 w-12 rounded-full object-cover" />
+              <div>
+                <p className="text-sm font-semibold">Riya M.</p>
+                <p className="text-xs text-black/50">Product Lead</p>
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-3xl bg-[#151515] p-6 text-white md:p-8">
+            <p className="text-xs uppercase tracking-[0.2em] text-white/60">FAQ</p>
+            <div className="mt-4 space-y-4 text-sm">
+              <div className="rounded-xl border border-white/20 p-4">
+                <p className="font-medium">How long does a website take?</p>
+                <p className="mt-2 text-white/70">Most projects are delivered in 2-4 weeks.</p>
+              </div>
+              <div className="rounded-xl border border-white/20 p-4">
+                <p className="font-medium">Do you also build dashboards?</p>
+                <p className="mt-2 text-white/70">Yes. We handle both marketing and product surfaces.</p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section className="mt-16 rounded-3xl border border-black/10 bg-white p-6 md:p-8">
+          <div className="grid items-center gap-5 md:grid-cols-[1.2fr,0.8fr]">
+            <div>
+              <h2 className="text-4xl md:text-5xl" style={headingFont}>Stay in the loop.</h2>
+              <p className="mt-3 text-sm text-black/60">Get updates on our latest design drops and product stories.</p>
+              <div className="mt-5 flex max-w-md gap-3">
+                <input type="email" placeholder="Enter your email" className="w-full rounded-full border border-black/20 px-4 py-3 text-sm outline-none" />
+                <button className="rounded-full bg-black px-5 py-3 text-sm text-white">Subscribe</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <img src={faceA} alt="thumb1" className="h-24 w-full rounded-2xl object-cover" />
+              <img src={faceB} alt="thumb2" className="h-24 w-full rounded-2xl object-cover" />
+              <img src={faceC} alt="thumb3" className="h-24 w-full rounded-2xl object-cover" />
+            </div>
+          </div>
+        </section>
+
+        <footer className="mt-14 border-t border-black/10 py-8 text-sm text-black/60">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p>Hubble. Creative Education Studio</p>
+            <div className="flex gap-5">
+              <a href="#Top">Top</a>
+              <a href="#services">Services</a>
+              <a href="#work">Work</a>
+              <a href="#pricing">Pricing</a>
+            </div>
+          </div>
+        </footer>
       </div>
-
-      <Navbar />
-
-      {/* Hero Section */}
-      <div className="relative text-center px-6 pt-28 pb-24">
-        {/* Background grid with perspective */}
-        <div className="absolute inset-0 -z-10 flex items-end justify-center opacity-30">
-          <div className="w-full h-[500px] bg-[linear-gradient(to_right,rgba(0,0,0,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.08)_1px,transparent_1px)] [background-size:50px_50px] transform perspective-[1200px] rotateX-45 origin-top" />
-        </div>
-
-        {/* Tiny doodle details */}
-        {/* Sparkles (left side) */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="absolute left-16 top-32 w-8 h-8 text-black opacity-70"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 16.536l-2.828 2.828M16.536 16.536l2.828 2.828M7.464 7.464L4.636 4.636"
-          />
-        </svg>
-
-        {/* Curved arrow (right side) */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="absolute right-20 top-40 w-16 h-16 text-black"
-          fill="none"
-          viewBox="0 0 100 100"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M10 80 C 40 10, 70 10, 90 80" />
-        </svg>
-
-        {/* Badge */}
-        <motion.span
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-block bg-white px-4 py-1 rounded-full shadow text-sm font-medium mb-6"
-        >
-          ⭐ Over 1k happy users
-        </motion.span>
-
-        {/* Heading */}
-        <motion.h1
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="text-5xl md:text-6xl font-extrabold text-gray-900 mb-4 leading-tight"
-        >
-          Regulate your mood <br /> with our videos
-        </motion.h1>
-
-        {/* Subtext */}
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="text-lg text-gray-600 max-w-2xl mx-auto mb-10"
-        >
-          Our pre-recorded sessions contain all the essentials to help you fix
-          your mood in a few sessions.
-        </motion.p>
-
-        {/* Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-          className="flex justify-center gap-4 mb-16"
-        >
-          <button className="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 flex items-center gap-2">
-            ▶ Play Video
-          </button>
-          <button className="bg-white border border-gray-300 px-6 py-3 rounded-xl hover:bg-gray-100">
-            Learn More
-          </button>
-        </motion.div>
-
-        {/* Floating Cards */}
-        <div className="flex justify-center gap-6 relative">
-          <motion.img
-            src={img1}
-            alt="Card 1"
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-            className="w-56 h-72 md:w-60 md:h-80 rounded-3xl shadow-lg object-cover"
-          />
-          <motion.img
-            src={img2}
-            alt="Card 2"
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1, duration: 0.6 }}
-            className="w-56 h-72 md:w-60 md:h-80 rounded-3xl shadow-lg object-cover"
-          />
-          <motion.img
-            src={img3}
-            alt="Card 3"
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.6 }}
-            className="w-56 h-72 md:w-60 md:h-80 rounded-3xl shadow-lg object-cover"
-          />
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <Features />
     </div>
   );
 }

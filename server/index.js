@@ -4,6 +4,7 @@ import 'dotenv/config';
 import authRoutes from './routes/auth.js';
 import eventRoutes from './routes/events.js';
 import userRouter from './routes/users.js';
+import societyRouter from './routes/societies.js';
 
 const app = express();
 app.use(cors());
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/users', userRouter);
+app.use('/api/societies', societyRouter)
 
 app.get('/', (req, res) => res.send('Hubble Backend is Orbiting!'));
 

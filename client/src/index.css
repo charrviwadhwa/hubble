@@ -1,4 +1,45 @@
 @import url('https://fonts.googleapis.com/css2?family=Bad+Script&family=Newsreader:ital,opsz,wght@1,6..72,200..800&family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap');
 @import "tailwindcss";
 
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes floatY {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.anim-rise {
+  animation: riseIn 0.65s ease-out both;
+}
+
+.anim-fade {
+  animation: fadeIn 0.8s ease-out both;
+}
+
+.anim-float {
+  animation: floatY 4.8s ease-in-out infinite;
+}
 
