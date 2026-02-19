@@ -26,10 +26,6 @@ export default function MySocieties() {
   
     }, []);
 
-  // frontend/pages/MySocieties.jsx
-
-// Inside your handleViewSociety function
- // Add this state at the top
 
 const handleViewSociety = async (society) => {
   setSelectedSociety(society);
@@ -89,9 +85,17 @@ const handleViewSociety = async (society) => {
             <div key={soc.id} className="group flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 transition-all hover:border-[#ff6b35] hover:shadow-md">
                {/* Society Card Content */}
                <div className="flex items-center gap-4">
-                  <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#f7f3ec] text-xl font-bold text-[#ff6b35]">
-                    {soc.logo ? <img src={soc.logo} alt="" className="rounded-xl" /> : soc.name[0]}
-                  </div>
+                  <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#f7f3ec] text-xl font-bold text-[#ff6b35] overflow-hidden">
+                        {soc.logo ? (
+                            <img 
+                            src={`http://localhost:3001${soc.logo}`} // Maps to your Express static folder
+                            alt={soc.name} 
+                            className="h-full w-full object-cover" 
+                            />
+                        ) : (
+                            soc.name[0]
+                        )}
+                        </div>
                   <div>
                     <h3 className="font-bold text-gray-900">{soc.name}</h3>
                     <p className="text-xs text-black/40 line-clamp-1">{soc.description}</p>
@@ -199,12 +203,20 @@ function SocietyDetail({ society, events, stats, onBack }) {
       <div className="rounded-[32px] bg-white p-8 border border-black/5 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-6">
-            <div className="h-20 w-20 rounded-3xl bg-[#ff6b35] text-white flex items-center justify-center text-3xl font-bold shadow-lg shadow-[#ff6b35]/20">
-              {society?.name?.[0] || 'S'}
-            </div>
+            <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#f7f3ec] text-xl font-bold text-[#ff6b35] overflow-hidden">
+                    {society.logo ? (
+                        <img 
+                        src={`http://localhost:3001${society.logo}`} 
+                        alt={society.name} 
+                        className="h-full w-full object-cover" 
+                        />
+                    ) : (
+                        society.name[0]
+                    )}
+                    </div>
             <div>
               <h2 className="text-3xl font-bold tracking-tight">{society?.name}</h2>
-              <p className="text-black/40 text-sm">Society Management Hub</p>
+              <p className="text-black/40 text-sm">{society?.category}</p>
             </div>
           </div>
           

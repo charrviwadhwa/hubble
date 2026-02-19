@@ -8,8 +8,10 @@ import Events from './pages/Events';
 import Dashboard from './pages/Dashboard'; // Import your new Dashboard
 import ProtectedRoute from './components/ProtectedRoute';
 import MySocieties from './pages/MySocieties';
+import CreateSociety from './pages/CreateSociety';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import CreateEvent from './pages/CreateEvent';
 
 function App() {
   return (
@@ -49,6 +51,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-society"
+          element={
+            <ProtectedRoute>
+              <CreateSociety />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-event"
+          element={
+            <ProtectedRoute>
+              <CreateEvent />
             </ProtectedRoute>
           }
         />

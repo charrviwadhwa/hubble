@@ -12,16 +12,16 @@ export const users = pgTable("users", {
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
-  description: text("description"),
-  date: timestamp("date").notNull(),
-  location: varchar("location", { length: 255 }),
-  capacity: integer("capacity").default(100),
-  // New: Category column (e.g., 'Tech', 'Cultural', 'Workshop')
-  category: varchar("category", { length: 100 }).default("General"), 
-  societyId: integer('society_id').references(() => societies.id),
-  createdBy: integer('created_by').references(() => users.id),
+  societyId: integer("society_id").references(() => societies.id),
+  banner: text("banner"),
+  category: varchar("category", { length: 100 }).notNull(), // Technical, Cultural, etc.
+  shortDescription: varchar("short_description", { length: 255 }),
+  longDescription: text("long_description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  location: varchar("location", { length: 255 }).notNull(), // "Online" or "Room 401"
+  registrationDeadline: timestamp("registration_deadline"),
 });
-
 export const registrations = pgTable("registrations", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -30,11 +30,16 @@ export const registrations = pgTable("registrations", {
   attended: boolean("attended").default(false),
 });
 
-export const societies = pgTable('societies', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 100 }).notNull(),
-  description: text('description'),
-  logo: text('logo'),
-  ownerId: integer('owner_id').references(() => users.id),
-  createdAt: timestamp('created_at').defaultNow(),
+export const societies = pgTable("societies", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  collegeName: varchar("college_name", { length: 255 }).notNull(),
+  presidentName: varchar("president_name", { length: 255 }).notNull(),
+  instaLink: text("insta_link"),
+  mailLink: text("mail_link"),
+  linkedinLink: text("linkedin_link"),
+  logo: text("logo"), // Stores the image path or Base64 string
+  ownerId: integer("owner_id").references(() => users.id),
 });

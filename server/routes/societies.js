@@ -3,24 +3,57 @@ import { db } from '../db/index.js'; // Ensure the path and extension are correc
 import { societies,events,registrations,users } from '../db/schema.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { eq,sql } from 'drizzle-orm';
+import multer from 'multer';
+import path from 'path';
 
 const router = express.Router();
 
+const storage = multer.diskStorage({
+  destination: './uploads/logos/',
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+const upload = multer({ storage });
+
 // 1. Create a Society
-router.post('/', authenticateToken, async (req, res) => {
+// backend/routes/societies.js
+
+router.post('/create', authenticateToken, upload.single('logo'), async (req, res) => {
+  // 1. Destructure ALL fields sent from the frontend
+  const { 
+    name, 
+    category, 
+    description, 
+    collegeName, 
+    presidentName, 
+    insta, 
+    mail, 
+    linkedin 
+  } = req.body;
+
+  // 2. Map the logo path
+  const logoPath = req.file ? `/uploads/logos/${req.file.filename}` : null;
+
   try {
-    const { name, description, logo } = req.body;
-    const newSociety = await db.insert(societies).values({
+    // 3. Insert into database using the correct schema keys
+    const [newSociety] = await db.insert(societies).values({
       name,
+      category, // Ensure this exists in your schema.js!
       description,
-      logo,
-      ownerId: req.user.id // Link society to the person who created it
+      collegeName, // Ensure this exists in your schema.js!
+      presidentName, // Ensure this exists in your schema.js!
+      instaLink: insta,
+      mailLink: mail,
+      linkedinLink: linkedin,
+      logo: logoPath,
+      ownerId: req.user.id 
     }).returning();
-    
-    res.status(201).json(newSociety[0]);
+
+    res.json(newSociety);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error creating society" });
+    console.error("Drizzle Insertion Error:", err); // This will show the exact missing column in your terminal
+    res.status(500).json({ error: "Failed to create society - check if all columns exist in schema" });
   }
 });
 

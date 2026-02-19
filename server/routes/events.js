@@ -1,13 +1,37 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import { db } from '../db/index.js';
 import { events } from '../db/schema.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { desc, eq, and, count } from 'drizzle-orm';
 import { registrations, users, societies } from '../db/schema.js';
+import multer from 'multer';
 const router = express.Router();
 
 // 1. Get all events (Public - for the Feed)
 import { ilike } from 'drizzle-orm'; // Import ilike
+
+const bannerStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = './uploads/banners/';
+    // Automatically create directory if it doesn't exist to prevent 500 errors
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `banner-${Date.now()}${path.extname(file.originalname)}`);
+  }
+});
+
+const uploadBanner = multer({ 
+  storage: bannerStorage,
+  limits: { 
+    fileSize: 10 * 1024 * 1024 // Increased to 10MB
+  } 
+});
 
 // Updated Get all events (Public - with Search & Filtering)
 // backend/routes/events.js
@@ -45,41 +69,73 @@ router.get('/', async (req, res) => {
 });
 
 // 2. Create an event (Protected - Admin Only)
-router.post('/', authenticateToken, async (req, res) => {
-  const { title, description, date, location, capacity, category, societyId } = req.body;
+// backend/routes/events.js
+router.post('/', authenticateToken, (req, res, next) => {
+  uploadBanner.single('banner')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: "File too large. Max limit is 10MB." });
+      }
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(500).json({ error: "Unknown upload error." });
+    }
+    next();
+  });
+}, async (req, res) => {
+  const { 
+    title, 
+    societyId, 
+    category, 
+    eventType, 
+    shortDescription, 
+    longDescription, 
+    startDate, 
+    endDate, 
+    location, 
+    registrationDeadline 
+  } = req.body;
 
-  // 1. Mandatory Check: Must provide a Society ID
+  // Map the uploaded file path
+  const bannerPath = req.file ? `/uploads/banners/${req.file.filename}` : null;
+
   if (!societyId) {
     return res.status(400).json({ message: "An event must be hosted by a society." });
   }
 
   try {
-    // 2. Security Check: Does the current user own this society?
-    const societyOwner = await db.select()
+    // 3. Ownership Verification: Only the Lead can post
+    const [ownedSociety] = await db.select()
       .from(societies)
-      .where(eq(societies.id, societyId))
-      .limit(1);
+      .where(and(
+        eq(societies.id, parseInt(societyId)),
+        eq(societies.ownerId, req.user.id)
+      ));
 
-    if (societyOwner.length === 0 || societyOwner[0].ownerId !== req.user.id) {
-      return res.status(403).json({ message: "You are not an admin for this society." });
+    if (!ownedSociety) {
+      return res.status(403).json({ message: "Unauthorized: You don't lead this society." });
     }
 
-    // 3. Insert Event with the societyId link
-    const newEvent = await db.insert(events).values({
+    // 4. Save to Database
+    const [newEvent] = await db.insert(events).values({
       title,
-      description,
-      date: new Date(date),
+      societyId: parseInt(societyId),
+      banner: bannerPath,
+      category,
+      eventType,
+      shortDescription,
+      longDescription,
+      startDate: new Date(startDate),
+      endDate: endDate ? new Date(endDate) : null,
       location,
-      capacity: capacity ? parseInt(capacity) : 100,
-      category: category || "General",
-      societyId: societyId, // Link event to the society
+      registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
       createdBy: req.user.id 
     }).returning();
 
-    res.status(201).json(newEvent[0]);
+    res.status(201).json(newEvent);
   } catch (err) {
-    console.error("EVENT CREATION ERROR:", err);
-    res.status(400).json({ error: "Could not create event", details: err.message });
+    console.error("EVENT ERROR:", err);
+    res.status(500).json({ error: "Could not publish event." });
   }
 });
 

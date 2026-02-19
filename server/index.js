@@ -15,7 +15,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/users', userRouter);
 app.use('/api/societies', societyRouter)
-
+app.use('/uploads', express.static('uploads'));
+app.use('/uploads/banners', express.static('uploads/banners'));
 app.get('/', (req, res) => res.send('Hubble Backend is Orbiting!'));
 
 const PORT = process.env.PORT || 3001;
