@@ -7,6 +7,7 @@ import Signup from './pages/Signup';
 import Events from './pages/Events';
 import Dashboard from './pages/Dashboard'; // Import your new Dashboard
 import ProtectedRoute from './components/ProtectedRoute';
+import MySocieties from './pages/MySocieties';
 
 function App() {
   return (
@@ -22,6 +23,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Events />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-societies"
+          element={
+            <ProtectedRoute>
+              <MySocieties />
             </ProtectedRoute>
           }
         />

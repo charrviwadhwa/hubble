@@ -7,26 +7,17 @@ function Icon({ type }) {
   if (type === 'grid') {
     return <svg viewBox="0 0 24 24" fill="none" className={common}><rect x="4" y="4" width="6" height="6" stroke="currentColor" /><rect x="14" y="4" width="6" height="6" stroke="currentColor" /><rect x="4" y="14" width="6" height="6" stroke="currentColor" /><rect x="14" y="14" width="6" height="6" stroke="currentColor" /></svg>;
   }
-  if (type === 'ticket') {
-    return <svg viewBox="0 0 24 24" fill="none" className={common}><rect x="4" y="7" width="16" height="10" rx="2" stroke="currentColor" /><path d="M9 7v10M15 7v10" stroke="currentColor" /></svg>;
-  }
-  if (type === 'invoice') {
-    return <svg viewBox="0 0 24 24" fill="none" className={common}><rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" /><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" /></svg>;
-  }
-  if (type === 'mail') {
-    return <svg viewBox="0 0 24 24" fill="none" className={common}><rect x="4" y="6" width="16" height="12" rx="2" stroke="currentColor" /><path d="m5 8 7 5 7-5" stroke="currentColor" /></svg>;
-  }
-  if (type === 'calendar') {
-    return <svg viewBox="0 0 24 24" fill="none" className={common}><rect x="4" y="6" width="16" height="14" rx="2" stroke="currentColor" /><path d="M8 4v4M16 4v4M4 10h16" stroke="currentColor" /></svg>;
-  }
   if (type === 'spark') {
     return <svg viewBox="0 0 24 24" fill="none" className={common}><path d="m12 3 1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Z" stroke="currentColor" /></svg>;
   }
-  if (type === 'coin') {
-    return <svg viewBox="0 0 24 24" fill="none" className={common}><circle cx="12" cy="12" r="8" stroke="currentColor" /><path d="M9.5 10.5c.3-1 1.3-1.7 2.5-1.7 1.4 0 2.5 1 2.5 2.2 0 1.1-.9 1.8-2.2 2.1l-.6.1c-1.2.3-2 .9-2 1.9 0 1.2 1.1 2.2 2.5 2.2 1.2 0 2.2-.7 2.5-1.7" stroke="currentColor" /></svg>;
-  }
   if (type === 'image') {
     return <svg viewBox="0 0 24 24" fill="none" className={common}><rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" /><circle cx="9" cy="10" r="1.4" stroke="currentColor" /><path d="m6 17 4.2-4 2.8 2.4L16 12l2 2.5" stroke="currentColor" /></svg>;
+  }
+  if (type === 'profile') {
+    return <svg viewBox="0 0 24 24" fill="none" className={common}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" /><circle cx="12" cy="7" r="4" stroke="currentColor" /></svg>;
+  }
+  if (type === 'settings') {
+    return <svg viewBox="0 0 24 24" fill="none" className={common}><circle cx="12" cy="12" r="3" stroke="currentColor" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" /></svg>;
   }
 
   return <svg viewBox="0 0 24 24" fill="none" className={common}><path d="m12 4 2.4 4.8 5.3.8-3.8 3.8.9 5.3L12 16.2l-4.8 2.5.9-5.3-3.8-3.8 5.3-.8L12 4Z" stroke="currentColor" /></svg>;
@@ -34,11 +25,10 @@ function Icon({ type }) {
 
 const menuItems = [
   { label: 'Dashboard', to: '/dashboard', icon: 'grid' },
-  { label: 'My Tickets', to: '/my-registrations', icon: 'ticket' },
   { label: 'Events', to: '/events', icon: 'spark' },
-  { label: 'Calendar', to: '/calendar', icon: 'calendar' },
-  { label: 'Profile', to: '/profile', icon: 'image' },
-  { label: 'Feedback', to: '/feedback', icon: 'star' }
+  { label: 'My Societies', to: '/my-societies', icon: 'image' },
+  { label: 'Profile', to: '/profile', icon: 'profile' },
+  { label: 'Settings', to: '/settings', icon: 'settings' }
 ];
 
 export default function Sidebar({ userRole }) {
@@ -53,7 +43,7 @@ export default function Sidebar({ userRole }) {
         </div>
         <div>
           <p className="text-xl font-semibold tracking-tight text-[#1a1a1a]">Hubble</p>
-          <p className="text-[10px] uppercase font-bold text-black/40">{userRole || 'student'}</p>
+          <p className="text-[10px] uppercase font-bold text-black/40">{userRole || 'Member'}</p>
         </div>
       </div>
 
@@ -77,16 +67,6 @@ export default function Sidebar({ userRole }) {
           );
         })}
       </nav>
-
-      {/* Admin Section */}
-      {userRole === 'admin' && (
-        <div className="mt-4 p-3 bg-white/40 rounded-xl border border-dashed border-black/10">
-          <p className="text-[10px] font-bold text-black/50 mb-2 uppercase">Admin Tools</p>
-          <Link to="/create-event" className="block text-center bg-white border border-black/10 py-2 rounded-lg text-xs font-bold hover:bg-white transition shadow-sm">
-            + Create Event
-          </Link>
-        </div>
-      )}
 
       {/* Logout */}
       <button

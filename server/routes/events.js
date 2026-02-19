@@ -10,25 +10,28 @@ const router = express.Router();
 import { ilike } from 'drizzle-orm'; // Import ilike
 
 // Updated Get all events (Public - with Search & Filtering)
+// backend/routes/events.js
+
 router.get('/', async (req, res) => {
-  const { category, q } = req.query; // 'q' is our search keyword
+  const { category, q, societyId } = req.query; // Extract societyId from the URL query
 
   try {
     let query = db.select().from(events);
     const conditions = [];
 
-    // 1. Filter by category if provided
+    // 1. Filter by Society (The Fix)
+    if (societyId) {
+      conditions.push(eq(events.societyId, parseInt(societyId))); // Only show events for this society
+    }
+
     if (category) {
       conditions.push(ilike(events.category, category));
     }
 
-    // 2. Search in title if 'q' is provided
     if (q) {
-      // %${q}% matches any title containing the search term
       conditions.push(ilike(events.title, `%${q}%`));
     }
 
-    // Combine conditions with 'and'
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
@@ -228,22 +231,18 @@ router.get('/organizer/all-stats', authenticateToken, async (req, res) => {
         eventTitle: events.title,
         studentName: users.name,
         studentEmail: users.email,
-        // Explicitly specify registrations.createdAt to avoid ambiguity
-        registrationDate: registrations.createdAt 
+        // FIXED: Change 'createdAt' to 'registeredAt' to match your schema
+        registrationDate: registrations.registeredAt 
       })
       .from(registrations)
       .innerJoin(events, eq(registrations.eventId, events.id))
       .innerJoin(users, eq(registrations.userId, users.id))
-      .where(eq(events.createdBy, req.user.id)); // Events created by the logged-in student
+      .where(eq(events.createdBy, req.user.id)); // Using createdBy as the link to organizer
 
     res.json(stats);
   } catch (err) {
-    // Check your terminal for the detailed error log!
-    console.error("DETAILED DB ERROR:", err); 
-    res.status(500).json({ 
-      error: "Failed to fetch organizer stats", 
-      details: err.message 
-    });
+    console.error("DB Error:", err);
+    res.status(500).json({ error: "Failed to fetch organizer stats" });
   }
 });
 export default router;
