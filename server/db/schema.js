@@ -5,7 +5,8 @@ export const users = pgTable("users", {
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).unique().notNull(),
   password: text("password").notNull(),
-  role: varchar("role", { length: 50 }).default("student"), // 'student' or 'admin'
+  role: varchar("role", { length: 50 }).default("student"),
+  phone: varchar("phone", { length: 20 }), 
 });
 
 export const events = pgTable("events", {

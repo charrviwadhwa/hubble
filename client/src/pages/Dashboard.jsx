@@ -8,7 +8,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     // 1. Fetch Profile
-    fetch('http://localhost:3001/api/users/profile', {
+    fetch('http://localhost:3001/api/users/me/profile', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
       .then((res) => res.json())

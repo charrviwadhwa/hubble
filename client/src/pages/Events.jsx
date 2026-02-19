@@ -8,7 +8,7 @@ export default function Events() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/users/profile', {
+    fetch('http://localhost:3001/api/users/me/profile', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
       .then((res) => res.json())
