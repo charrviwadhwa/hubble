@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, timestamp, integer,boolean } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -26,6 +26,7 @@ export const registrations = pgTable("registrations", {
   userId: integer("user_id").references(() => users.id).notNull(),
   eventId: integer("event_id").references(() => events.id).notNull(),
   registeredAt: timestamp("registered_at").defaultNow(),
+  attended: boolean("attended").default(false),
 });
 
 export const societies = pgTable('societies', {

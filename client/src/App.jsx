@@ -8,6 +8,7 @@ import Events from './pages/Events';
 import Dashboard from './pages/Dashboard'; // Import your new Dashboard
 import ProtectedRoute from './components/ProtectedRoute';
 import MySocieties from './pages/MySocieties';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -31,6 +32,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MySocieties />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />
