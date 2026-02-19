@@ -25,6 +25,7 @@ export default function MySocieties() {
         .then((data) => setUser(data));
   
     }, []);
+// Helper function for consistent formatting across Hubble
 
 
 const handleViewSociety = async (society) => {
@@ -34,17 +35,24 @@ const handleViewSociety = async (society) => {
   const resEvents = await fetch(`http://localhost:3001/api/events?societyId=${society.id}`); 
   const dataEvents = await resEvents.json();
   
-  // 2. Fetch Hub Stats (Registrations/Attendance/Badges)
+  // 2. Fetch Hub Stats
   const resStats = await fetch(`http://localhost:3001/api/societies/${society.id}/stats`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
   const dataStats = await resStats.json();
-  setHubStats(dataStats); // Save the stats to state
+  setHubStats(dataStats);
 
   const now = new Date();
+  
   setSocietyEvents({
-    upcoming: dataEvents.filter(e => new Date(e.date) >= now),
-    past: dataEvents.filter(e => new Date(e.date) < now)
+    upcoming: dataEvents.filter(e => {
+      const eventDate = new Date(e.startDate || e.date);
+      return eventDate >= now;
+    }),
+    past: dataEvents.filter(e => {
+      const eventDate = new Date(e.startDate || e.date);
+      return eventDate < now;
+    })
   });
 };
   const initials = user?.name ? user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() : 'HB';
@@ -58,26 +66,35 @@ const handleViewSociety = async (society) => {
           <main className="flex-1 rounded-2xl bg-[#f9f6ef] p-4 md:p-6 overflow-y-auto">
             {!selectedSociety ? (
               <>
-            <header className="mb-4 rounded-2xl bg-white p-4 border border-black/10">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs text-black/45">My Societies</p>
-                  <h1 className="text-3xl font-semibold tracking-tight text-[#1a1a1a]">My Societies</h1>
-                </div>
+            
+                <header className="mb-4 rounded-2xl bg-white p-4 border border-black/10">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                    <p className="text-xs text-black/45">Management / Hub</p>
+                    <h1 className="text-3xl font-semibold tracking-tight text-[#1a1a1a]">My Societies</h1>
+                    </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="ml-1 flex items-center gap-2 rounded-full border border-black/10 bg-white px-2 py-1.5 shadow-sm">
-                    <div className="grid h-8 w-8 place-items-center rounded-full bg-[#ff6b35] text-xs font-bold text-white">
-                      {initials}
+                    <div className="flex items-center gap-2">
+                    {/* 🏛️ NEW: CREATE SOCIETY BUTTON (Always visible for leads/members) */}
+                    <button 
+                        onClick={() => window.location.href = '/create-society'}
+                        className="flex items-center gap-2 rounded-full bg-[#ff6b35] px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-[#ff6b35]/20 transition-all hover:scale-105 active:scale-95"
+                    >
+                        <span className="text-lg">+</span> Register Society
+                    </button>
+
+                    <div className="ml-1 flex items-center gap-2 rounded-full border border-black/10 bg-white px-2 py-1.5 shadow-sm">
+                        <div className="grid h-8 w-8 place-items-center rounded-full bg-[#ff6b35] text-xs font-bold text-white">
+                        {initials}
+                        </div>
+                        <div className="pr-2 text-left">
+                        <p className="text-xs font-semibold text-[#1b1b1b]">{user?.name || 'Loading...'}</p>
+                        <p className="text-[10px] capitalize text-black/50">{user?.role || 'member'}</p>
+                        </div>
                     </div>
-                    <div className="pr-2">
-                      <p className="text-xs font-semibold text-[#1b1b1b]">{user?.name || 'Loading...'}</p>
-                      <p className="text-[10px] capitalize text-black/50">{user?.role || 'member'}</p>
                     </div>
-                  </div>
                 </div>
-              </div>
-            </header>
+                </header>
                 {/* List View Style (from your reference) */}
                 {societies.length > 0 ? (
         <div className="space-y-3">
@@ -120,12 +137,7 @@ const handleViewSociety = async (society) => {
           <p className="mt-2 max-w-xs text-sm text-black/30 leading-relaxed">
             You aren't currently leading any societies at MSIT. Ready to start something new?
           </p>
-          <button 
-            onClick={() => window.location.href = '/create-society'}
-            className="mt-8 rounded-2xl bg-white border border-black/10 px-8 py-3 text-xs font-bold text-black hover:bg-black hover:text-white transition-all shadow-sm"
-          >
-            + Create a Society
-          </button>
+          
         </div>
       )}
     </>
@@ -149,15 +161,28 @@ function SocietyDetail({ society, events, stats, onBack }) {
   const [viewingAttendeesFor, setViewingAttendeesFor] = useState(null);
   const [attendees, setAttendees] = useState([]);
 
-  const handleViewAttendees = async (event) => {
-    setViewingAttendeesFor(event);
+  // Inside SocietyDetail component
+const handleViewAttendees = async (event) => {
+  // 1. Check if event exists before doing anything
+  if (!event || !event.title) return;
+
+  setViewingAttendeesFor(event);
+  
+  try {
     const res = await fetch(`http://localhost:3001/api/events/organizer/all-stats`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
-    const data = await res.json();
-    const eventAttendees = data.filter(item => item.eventTitle === event.title);
-    setAttendees(eventAttendees);
-  };
+    
+    if (res.ok) {
+      const data = await res.json();
+      // 2. Use 'event.title' (the parameter) instead of 'viewingAttendeesFor.title'
+      const eventAttendees = data.filter(item => item.eventTitle === event.title);
+      setAttendees(eventAttendees);
+    }
+  } catch (err) {
+    console.error("Failed to fetch attendees:", err);
+  }
+};
 
   if (viewingAttendeesFor) {
     return (
@@ -272,38 +297,61 @@ function SocietyDetail({ society, events, stats, onBack }) {
         </section>
 
         <section>
-          <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-800">
-            <span className="h-2 w-2 rounded-full bg-gray-300"></span> Past Archive
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-60 grayscale-[0.3]">
-            {events?.past?.map(e => (
-              <SmallEventCard key={e.id} event={e} onClick={() => handleViewAttendees(e)} />
-            ))}
-          </div>
-        </section>
+  <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-800 uppercase text-[11px] tracking-widest">
+    <span className="h-2 w-2 rounded-full bg-gray-300"></span> Past Archive
+  </h3>
+  
+  {/* The grayscale container makes all nested images look archived */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+    {events?.past?.map(e => (
+      <SmallEventCard 
+        key={e.id} 
+        event={e} 
+        onClick={() => handleViewAttendees(e)} 
+      />
+    ))}
+    {(!events?.past || events.past.length === 0) && (
+      <p className="text-sm text-black/30 italic">Archive is empty.</p>
+    )}
+  </div>
+</section>
       </div>
     </div>
   );
 }
 function SmallEventCard({ event, onClick }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-white border border-black/5 p-4 hover:border-[#ff6b35]/30 transition-all">
-       <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-lg bg-[#f7f3ec] flex flex-col items-center justify-center text-[10px] font-bold">
-            <span className="text-[#ff6b35]">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
-            <span>{new Date(event.date).getDate()}</span>
+    <div 
+      onClick={onClick}
+      className="group flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-3 transition-all hover:border-[#ff6b35]/20 hover:shadow-md cursor-pointer"
+    >
+      {/* Event Thumbnail */}
+      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[#f7f3ec] border border-black/5">
+        {event.banner ? (
+          <img 
+            src={`http://localhost:3001${event.banner}`} 
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+            alt="Event"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-[#ff6b35]/30">
+            <i className="fi fi-rr-picture text-xl"></i>
           </div>
-          <div>
-            <h4 className="font-bold text-sm leading-tight text-gray-800">{event.title}</h4>
-            <p className="text-[10px] text-black/40">{event.location}</p>
-          </div>
-       </div>
-       <button 
-         onClick={onClick}
-         className="text-[10px] font-bold text-[#ff6b35] hover:underline"
-       >
-         View Attendees →
-       </button>
+        )}
+      </div>
+
+      {/* Event Info */}
+      <div className="flex-1 min-w-0">
+        <h4 className="truncate text-sm font-black text-[#1a1a1a]">{event.title}</h4>
+        <div className="flex items-center gap-2 text-[10px] font-bold text-black/30 mt-0.5">
+                <i className="fi fi-rr-calendar-clock text-[#ff6b35]"></i>
+                <span>{formatDate(event.startDate)}</span>
+                </div>
+      </div>
+
+      <div className="h-8 w-8 rounded-full bg-[#f7f3ec] flex items-center justify-center text-black/20 group-hover:bg-[#ff6b35]/10 group-hover:text-[#ff6b35] transition-colors">
+        <i className="fi fi-rr-angle-small-right text-xl"></i>
+      </div>
     </div>
   );
 }
@@ -338,4 +386,14 @@ function QuickStat({ label, value, icon }) {
     </div>
   );
 }
-
+const formatDate = (dateString) => {
+  if (!dateString) return "TBA";
+  const date = new Date(dateString);
+  
+  // 'en-GB' uses DD/MM/YYYY
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};

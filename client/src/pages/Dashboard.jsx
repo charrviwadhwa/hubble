@@ -18,13 +18,26 @@ export default function Dashboard() {
     fetchMyRegistrations();
   }, []);
 
-  const fetchMyRegistrations = async () => {
+  // Dashboard.jsx
+
+const fetchMyRegistrations = async () => {
+  try {
     const res = await fetch('http://localhost:3001/api/events/my-registrations', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
+    
+    // Check if the response is okay before parsing JSON
+    if (!res.ok) throw new Error("Failed to fetch");
+
     const data = await res.json();
-    setRegisteredEvents(data);
-  };
+    
+    // 🛡️ Always ensure data is an array before setting state
+    setRegisteredEvents(Array.isArray(data) ? data : []);
+  } catch (err) {
+    console.error("Dashboard Fetch Error:", err);
+    setRegisteredEvents([]); // Fallback to empty list
+  }
+};
 
   const initials = user?.name ? user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() : 'HB';
 
@@ -77,7 +90,7 @@ export default function Dashboard() {
                     key={event.id}
                     event={event}
                     index={index}
-                    isDashboard={true} // You can use this prop to hide the "Join" button
+                    isRegistered={true} // 🔥 Hardcoded true for Dashboard
                     onRefresh={fetchMyRegistrations}
                   />
                 ))

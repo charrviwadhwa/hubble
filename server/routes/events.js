@@ -36,16 +36,17 @@ const uploadBanner = multer({
 // Updated Get all events (Public - with Search & Filtering)
 // backend/routes/events.js
 
+// backend/routes/events.js
+
 router.get('/', async (req, res) => {
-  const { category, q, societyId } = req.query; // Extract societyId from the URL query
+  const { category, q, societyId } = req.query;
 
   try {
     let query = db.select().from(events);
     const conditions = [];
 
-    // 1. Filter by Society (The Fix)
     if (societyId) {
-      conditions.push(eq(events.societyId, parseInt(societyId))); // Only show events for this society
+      conditions.push(eq(events.societyId, parseInt(societyId)));
     }
 
     if (category) {
@@ -60,10 +61,13 @@ router.get('/', async (req, res) => {
       query = query.where(and(...conditions));
     }
 
-    const allEvents = await query.orderBy(desc(events.date));
+    // 🔥 FIX: Use events.startDate instead of events.date
+    // Also ensures the column exists to avoid "order by desc" syntax errors
+    const allEvents = await query.orderBy(desc(events.startDate || events.id));
+    
     res.json(allEvents);
   } catch (err) {
-    console.error(err);
+    console.error("Fetch Events Error:", err);
     res.status(500).json({ error: "Failed to fetch events" });
   }
 });
@@ -209,34 +213,39 @@ router.get('/:id/attendees', authenticateToken, async (req, res) => {
   }
 });
 // 4. Get events registered by the current user
+// backend/routes/events.js
+
+// 4. Get events registered by the current user (Fixed)
 router.get('/my-registrations', authenticateToken, async (req, res) => {
   try {
     const myEvents = await db
       .select({
-        eventId: events.id,
+        id: events.id,
         title: events.title,
-        date: events.date,
+        startDate: events.startDate, // ✅ Use startDate
         location: events.location,
+        banner: events.banner,
+        eventType: events.eventType, // ✅ Change from category
+        shortDescription: events.shortDescription
       })
       .from(registrations)
       .innerJoin(events, eq(registrations.eventId, events.id))
       .where(eq(registrations.userId, req.user.id));
-
+      
     res.json(myEvents);
   } catch (err) {
-    console.error(err);
+    console.error("Drizzle Select Error:", err);
     res.status(500).json({ error: "Could not fetch your schedule" });
   }
 });
+
 router.get('/my-schedule', authenticateToken, async (req, res) => {
   try {
-    // We join the 'registrations' table with 'events' 
-    // to get the details of all events this user joined.
     const myEvents = await db
       .select({
         id: events.id,
         title: events.title,
-        date: events.date,
+        startDate: events.startDate, // ✅ Fix: events.date -> events.startDate
         location: events.location
       })
       .from(registrations)
@@ -245,8 +254,7 @@ router.get('/my-schedule', authenticateToken, async (req, res) => {
 
     res.json(myEvents);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Could not fetch your schedule" });
+    res.status(500).json({ error: "Could not fetch schedule" });
   }
 });
 
@@ -287,18 +295,50 @@ router.get('/organizer/all-stats', authenticateToken, async (req, res) => {
         eventTitle: events.title,
         studentName: users.name,
         studentEmail: users.email,
-        // FIXED: Change 'createdAt' to 'registeredAt' to match your schema
         registrationDate: registrations.registeredAt 
       })
       .from(registrations)
       .innerJoin(events, eq(registrations.eventId, events.id))
+      .innerJoin(societies, eq(events.societyId, societies.id)) // Join to check ownership
       .innerJoin(users, eq(registrations.userId, users.id))
-      .where(eq(events.createdBy, req.user.id)); // Using createdBy as the link to organizer
+      .where(eq(societies.ownerId, req.user.id)); // Filter by Society Owner
 
     res.json(stats);
   } catch (err) {
     console.error("DB Error:", err);
     res.status(500).json({ error: "Failed to fetch organizer stats" });
+  }
+});
+// backend/routes/events.js
+
+// backend/routes/events.js
+
+router.get('/:id', async (req, res) => {
+  try {
+    const eventId = Number(req.params.id); // More robust than parseInt
+    
+    if (isNaN(eventId)) {
+      return res.status(400).json({ error: "Invalid Event ID" });
+    }
+
+    // Use .limit(1) to speed up the query once a match is found
+    const data = await db.select({
+      event: events,
+      society: societies
+    })
+    .from(events)
+    .innerJoin(societies, eq(events.societyId, societies.id))
+    .where(eq(events.id, eventId))
+    .limit(1);
+
+    if (data.length === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    res.json(data[0]);
+  } catch (err) {
+    console.error("Performance Error:", err);
+    res.status(500).json({ error: "Database timeout" });
   }
 });
 export default router;

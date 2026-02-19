@@ -12,6 +12,7 @@ import CreateSociety from './pages/CreateSociety';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import CreateEvent from './pages/CreateEvent';
+import EventDescription from './pages/EventDescription';
 
 function App() {
   return (
@@ -67,6 +68,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateEvent />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/:id"
+          element={
+            <ProtectedRoute>
+              <EventDescription />
             </ProtectedRoute>
           }
         />

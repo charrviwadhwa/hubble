@@ -28,6 +28,35 @@ export default function Events() {
     fetchEvents();
   }, []);
 
+
+// 1. Ensure the initial state is always an empty array
+const [userRegistrations, setUserRegistrations] = useState([]);
+
+const fetchUserRegistrations = async () => {
+  try {
+    const res = await fetch('http://localhost:3001/api/events/my-registrations', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    
+    const data = await res.json();
+
+    // 2. Check if the data is actually an array before setting state
+    if (Array.isArray(data)) {
+      setUserRegistrations(data);
+    } else {
+      console.warn("Expected array for registrations, got:", data);
+      setUserRegistrations([]); // Fallback to empty array to prevent crash
+    }
+  } catch (err) {
+    console.error("Error fetching registrations:", err);
+    setUserRegistrations([]); // Fallback on network error
+  }
+};
+
+useEffect(() => {
+  fetchEvents();
+  fetchUserRegistrations();
+}, []);
   const fetchEvents = async (query = '') => {
     const url = query
       ? `http://localhost:3001/api/events?q=${query}`
@@ -107,7 +136,13 @@ export default function Events() {
             <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               {events.length > 0 ? (
                 events.map((event, index) => (
-                  <EventCard key={event.id} event={event} index={index} onRefresh={fetchEvents} />
+                  <EventCard 
+                    key={event.id} 
+                    event={event} 
+                    onRefresh={() => { fetchEvents(); fetchUserRegistrations(); }}
+                    // 🔥 Added (userRegistrations || []) to ensure it's always an array
+                    isRegistered={(userRegistrations || []).some(reg => reg.id === event.id)} 
+                  />
                 ))
               ) : (
                 <div className="col-span-full rounded-2xl bg-white p-12 text-center border border-black/5">

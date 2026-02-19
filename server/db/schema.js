@@ -14,7 +14,7 @@ export const events = pgTable("events", {
   title: varchar("title", { length: 255 }).notNull(),
   societyId: integer("society_id").references(() => societies.id),
   banner: text("banner"),
-  category: varchar("category", { length: 100 }).notNull(), // Technical, Cultural, etc.
+  eventType: varchar("event_type", { length: 100 }).notNull(),
   shortDescription: varchar("short_description", { length: 255 }),
   longDescription: text("long_description"),
   startDate: timestamp("start_date").notNull(),
