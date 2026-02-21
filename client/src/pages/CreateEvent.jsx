@@ -66,6 +66,11 @@ export default function CreateEvent() {
       alert("Event Published! 🚀");
       window.location.href = '/my-societies';
     }
+    if (!res.ok) {
+    // This is where you show the red error message to the MSIT user
+    alert(result.error || result.message); 
+    return;
+  }
   };
 
   return (

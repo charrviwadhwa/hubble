@@ -23,14 +23,28 @@ const bannerStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, `banner-${Date.now()}${path.extname(file.originalname)}`);
-  }
+  },
+  
 });
 
 const uploadBanner = multer({ 
   storage: bannerStorage,
   limits: { 
     fileSize: 10 * 1024 * 1024 // Increased to 10MB
-  } 
+  } ,
+  fileFilter: (req, file, cb) => {
+    // Define the allowed extensions and mimetypes
+    const allowedTypes = /jpeg|jpg|png|webp|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+      return cb(null, true); // Accept the file
+    } else {
+      // Reject the file with a specific error message
+      cb(new Error("Only image files (JPG, PNG, WEBP, GIF) are allowed!"));
+    }
+  }
 });
 
 // Updated Get all events (Public - with Search & Filtering)
@@ -74,15 +88,20 @@ router.get('/', async (req, res) => {
 
 // 2. Create an event (Protected - Admin Only)
 // backend/routes/events.js
+// 2. Create an event (Protected - Admin Only)
 router.post('/', authenticateToken, (req, res, next) => {
   uploadBanner.single('banner')(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: "File too large. Max limit is 10MB." });
+    if (err) {
+      // 🔴 This is where the "red write up" (error message) is generated
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: "File too large. Max limit is 10MB." });
+        }
+        return res.status(400).json({ error: err.message });
+      } else if (err) {
+        // 🔥 This catches your "Only image files..." error from fileFilter
+        return res.status(400).json({ error: err.message });
       }
-      return res.status(400).json({ error: err.message });
-    } else if (err) {
-      return res.status(500).json({ error: "Unknown upload error." });
     }
     next();
   });
@@ -90,25 +109,21 @@ router.post('/', authenticateToken, (req, res, next) => {
   const { 
     title, 
     societyId, 
-    category, 
+    // Remove category if it's no longer in your schema
     eventType, 
     shortDescription, 
     longDescription, 
     startDate, 
     endDate, 
     location, 
-    registrationDeadline 
+    registrationDeadline,
+    capacity // Added capacity so it saves correctly
   } = req.body;
 
-  // Map the uploaded file path
   const bannerPath = req.file ? `/uploads/banners/${req.file.filename}` : null;
 
-  if (!societyId) {
-    return res.status(400).json({ message: "An event must be hosted by a society." });
-  }
-
   try {
-    // 3. Ownership Verification: Only the Lead can post
+    // Ownership Verification
     const [ownedSociety] = await db.select()
       .from(societies)
       .where(and(
@@ -120,26 +135,26 @@ router.post('/', authenticateToken, (req, res, next) => {
       return res.status(403).json({ message: "Unauthorized: You don't lead this society." });
     }
 
-    // 4. Save to Database
+    // 4. Save to Database - SYNCED WITH SCHEMA
     const [newEvent] = await db.insert(events).values({
       title,
       societyId: parseInt(societyId),
       banner: bannerPath,
-      category,
-      eventType,
+      eventType, // ✅ Correct field
       shortDescription,
       longDescription,
       startDate: new Date(startDate),
       endDate: endDate ? new Date(endDate) : null,
       location,
       registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
+      capacity: capacity ? parseInt(capacity) : 100, // ✅ Map capacity
       createdBy: req.user.id 
     }).returning();
 
     res.status(201).json(newEvent);
   } catch (err) {
     console.error("EVENT ERROR:", err);
-    res.status(500).json({ error: "Could not publish event." });
+    res.status(500).json({ error: "Could not publish event. Check your fields." });
   }
 });
 

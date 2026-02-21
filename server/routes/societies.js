@@ -14,13 +14,41 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
-const upload = multer({ storage });
+const upload = multer({ storage ,
+  fileFilter: (req, file, cb) => {
+    // Define the allowed extensions and mimetypes
+    const allowedTypes = /jpeg|jpg|png|webp|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+      return cb(null, true); // Accept the file
+    } else {
+      // Reject the file with a specific error message
+      cb(new Error("Only image files (JPG, PNG, WEBP, GIF) are allowed!"));
+    }
+  }
+});
+
 
 // 1. Create a Society
 // backend/routes/societies.js
 
-router.post('/create', authenticateToken, upload.single('logo'), async (req, res) => {
-  // 1. Destructure ALL fields sent from the frontend
+// 1. Create a Society (Updated with strict error handling)
+router.post('/create', authenticateToken, (req, res, next) => {
+  // 🔥 Wrap upload in a function to catch the fileFilter error
+  upload.single('logo')(req, res, (err) => {
+    if (err) {
+      // Catch Multer limit errors (like file size)
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: `Upload error: ${err.message}` });
+      }
+      // Catch our custom "Only image files..." error
+      return res.status(400).json({ error: err.message });
+    }
+    next(); // No error? Move to the database insertion
+  });
+}, async (req, res) => {
   const { 
     name, 
     category, 
@@ -32,17 +60,15 @@ router.post('/create', authenticateToken, upload.single('logo'), async (req, res
     linkedin 
   } = req.body;
 
-  // 2. Map the logo path
   const logoPath = req.file ? `/uploads/logos/${req.file.filename}` : null;
 
   try {
-    // 3. Insert into database using the correct schema keys
     const [newSociety] = await db.insert(societies).values({
       name,
-      category, // Ensure this exists in your schema.js!
+      category, 
       description,
-      collegeName, // Ensure this exists in your schema.js!
-      presidentName, // Ensure this exists in your schema.js!
+      collegeName, 
+      presidentName, 
       instaLink: insta,
       mailLink: mail,
       linkedinLink: linkedin,
@@ -52,8 +78,8 @@ router.post('/create', authenticateToken, upload.single('logo'), async (req, res
 
     res.json(newSociety);
   } catch (err) {
-    console.error("Drizzle Insertion Error:", err); // This will show the exact missing column in your terminal
-    res.status(500).json({ error: "Failed to create society - check if all columns exist in schema" });
+    console.error("Drizzle Insertion Error:", err);
+    res.status(500).json({ error: "Database error: Could not create society." });
   }
 });
 

@@ -12,11 +12,42 @@ export default function CreateSociety() {
   const [logo, setLogo] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    setLogo(file);
-    setPreview(URL.createObjectURL(file));
-  };
+  const [error, setError] = useState(""); 
+
+const handleLogoChange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // 1. Front-end Validation: Check if it's an image
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    setError("Only image files (JPG, PNG, WEBP) are allowed!");
+    setLogo(null);
+    setPreview(null);
+    e.target.value = null; // Reset the input
+    return;
+  }
+
+  // 2. Front-end Validation: Check size (10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    setError("File is too large! Max limit is 10MB.");
+    setLogo(null);
+    setPreview(null);
+    e.target.value = null;
+    return;
+  }
+
+  setError(""); // Clear errors if valid
+  setLogo(file);
+  setPreview(URL.createObjectURL(file));
+};
+
+// 🏛️ Small Helper: Remove Logo Function
+const removeLogo = () => {
+  setLogo(null);
+  setPreview(null);
+  setError("");
+};
 
   const handleSubmit = async (e) => {
   e.preventDefault();

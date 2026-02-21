@@ -1,114 +1,127 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 
+const TABS = [
+  { id: 'account', label: 'Account', icon: 'fi-rr-user' },
+  { id: 'societies', label: 'My Societies', icon: 'fi-rr-bank' },
+  { id: 'events', label: 'My Events', icon: 'fi-rr-calendar-star' }
+];
+
 export default function Settings() {
   const [user, setUser] = useState(null);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [currentTab, setCurrentTab] = useState('account');
+  const [editingField, setEditingField] = useState(null); 
   const [loading, setLoading] = useState(false);
 
+  // Data States
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [mySocieties, setMySocieties] = useState([]);
+  const [organizedEvents, setOrganizedEvents] = useState([]);
+
   useEffect(() => {
-    // 1. Fetching from your specific profile route
-    fetch('http://localhost:3001/api/users/me/profile', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-    .then(res => res.json())
-    .then(data => {
-      setUser(data);
-      // Ensure data.email exists in your backend response
-      setFormData({ 
-        name: data.name || '', 
-        email: data.email || '', 
-        phone: data.phone || '' 
-      });
-    })
-    .catch(err => console.error("Fetch error:", err));
+    const fetchData = async () => {
+      const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+      
+      // 1. User Profile
+      const userRes = await fetch('http://localhost:3001/api/users/me/profile', { headers });
+      const userData = await userRes.json();
+      setUser(userData);
+      setFormData({ name: userData.name || '', email: userData.email || '', phone: userData.phone || '' });
+
+      // 2. Societies you OWN
+      const socRes = await fetch('http://localhost:3001/api/societies/my', { headers });
+      const socData = await socRes.json();
+      setMySocieties(Array.isArray(socData) ? socData : []);
+
+      // 3. Events you CREATED
+      // We fetch all events and filter by createdBy locally for security
+      const eventRes = await fetch('http://localhost:3001/api/events', { headers });
+      const eventData = await eventRes.json();
+      const filtered = eventData.filter(e => e.createdBy === userData.id);
+      setOrganizedEvents(filtered);
+    };
+    fetchData();
   }, []);
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const response = await fetch('http://localhost:3001/api/users/me/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          phone: formData.phone
-        }),
-      });
-
-      if (response.ok) alert("Profile updated!");
-    } catch (error) {
-      console.error("Save error:", error);
-    } finally {
-      setLoading(false);
-    }
+  const handleUpdateSociety = async (id, updatedData) => {
+    // Logic to call PUT /api/societies/:id
+    console.log("Updating Society:", id, updatedData);
+    setEditingField(null);
   };
 
   return (
     <div className="min-h-screen bg-[#f3efe8] p-4 md:p-6 text-[#1a1a1a]">
       <div className="mx-auto max-w-[1380px] rounded-[28px] border border-black/10 bg-[#f7f3ec] p-3 shadow-lg md:p-4">
         <div className="flex flex-col gap-4 lg:flex-row">
-          {/* Ensure Sidebar gets the role for correct links */}
           <Sidebar userRole={user?.role} />
 
-          <main className="flex-1 rounded-2xl bg-[#f9f6ef] p-6 md:p-10">
+          <main className="flex-1 rounded-2xl bg-[#f9f6ef] p-6 md:p-10 overflow-y-auto">
             <header className="mb-10 flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-black">Settings</h1>
-                <p className="text-sm text-black/40 font-medium mt-1">Manage your MSIT Hubble credentials</p>
-              </div>
-              <button 
-                onClick={handleSave}
-                disabled={loading}
-                className="rounded-2xl bg-[#ff6b35] px-8 py-3 text-sm font-bold text-white shadow-lg shadow-[#ff6b35]/20 hover:scale-105 transition disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
+              <h1 className="text-4xl font-black tracking-tight">Settings</h1>
+              <button className="rounded-2xl bg-[#ff6b35] px-8 py-3 text-xs font-black uppercase text-white shadow-lg shadow-[#ff6b35]/20">
+                Save All
               </button>
             </header>
 
-            <div className="max-w-3xl space-y-12">
-              <section className="space-y-6">
-                <h3 className="text-xl font-bold">Profile Information</h3>
+            <div className="mb-10 flex gap-8 border-b border-black/5">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => { setCurrentTab(tab.id); setEditingField(null); }}
+                  className={`flex items-center gap-2 pb-4 text-[11px] font-black uppercase tracking-widest transition-all ${
+                    currentTab === tab.id ? "border-b-2 border-[#ff6b35] text-[#ff6b35]" : "text-black/30"
+                  }`}
+                >
+                  <i className={`fi ${tab.icon}`}></i> {tab.label}
+                </button>
+              ))}
+            </div>
 
-                <div className="grid gap-6">
-                  {/* Name Field */}
-                  <InputField 
-                    label="Full Name" 
-                    value={formData.name} 
-                    onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                  />
-                  
-                  {/* --- Email Field: Fixed Visibility --- */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase text-black/30 ml-2 tracking-widest">Email Address</label>
-                    <input 
-                      type="text"
-                      readOnly 
-                      value={formData.email || user?.email || 'Loading...'} 
-                      className="w-full rounded-2xl border border-black/5 bg-black/[0.03] p-4 text-sm font-medium text-black/40 cursor-not-allowed outline-none"
-                    />
-                    <p className="text-[10px] text-black/30 ml-2 italic text-orange-600/60">Primary email is managed by MSIT Admin</p>
-                  </div>
+            <div className="max-w-3xl space-y-6">
+              {/* --- ACCOUNT TAB --- */}
+              {currentTab === 'account' && (
+                <EditableRow 
+                  label="Full Name" 
+                  value={formData.name} 
+                  isEditing={editingField === 'account_name'}
+                  onEdit={() => setEditingField(editingField === 'account_name' ? null : 'account_name')}
+                  onChange={(val) => setFormData({...formData, name: val})}
+                />
+              )}
 
-                  {/* Phone Field */}
-                 
-                </div>
-              </section>
-
-              <hr className="border-black/5" />
-
-              <section className="space-y-6">
-                <h3 className="text-xl font-bold">Security</h3>
+              {/* --- SOCIETIES TAB --- */}
+              {currentTab === 'societies' && (
                 <div className="space-y-4">
-                  <ToggleField label="Two-Factor Authentication" description="Extra security for your event tickets" defaultOn={true} />
-                  <ToggleField label="Login Notifications" description="Alerts for new logins at MSIT" defaultOn={false} />
+                  {mySocieties.map(soc => (
+                    <EditableRow 
+                      key={soc.id}
+                      label={`Society Name: ${soc.name}`}
+                      value={soc.description}
+                      isEditing={editingField === `soc_${soc.id}`}
+                      onEdit={() => setEditingField(editingField === `soc_${soc.id}` ? null : `soc_${soc.id}`)}
+                      onChange={(val) => handleUpdateSociety(soc.id, { description: val })}
+                      placeholder="Edit society description..."
+                    />
+                  ))}
                 </div>
-              </section>
+              )}
+
+              {/* --- EVENTS TAB --- */}
+              {currentTab === 'events' && (
+                <div className="space-y-4">
+                  {organizedEvents.map(event => (
+                    <EditableRow 
+                      key={event.id}
+                      label={`Event Title: ${event.title}`}
+                      value={event.location}
+                      isEditing={editingField === `evt_${event.id}`}
+                      onEdit={() => setEditingField(editingField === `evt_${event.id}` ? null : `evt_${event.id}`)}
+                      onChange={(val) => console.log("Edit Event Location", event.id, val)}
+                      placeholder="Edit event location..."
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </main>
         </div>
@@ -117,36 +130,27 @@ export default function Settings() {
   );
 }
 
-// Sub-components (InputField, ToggleField) defined here...
-function InputField({ label, value, onChange, placeholder }) {
+function EditableRow({ label, value, isEditing, onEdit, onChange, placeholder }) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase text-black/30 ml-2 tracking-widest">{label}</label>
-      <input 
-        type="text"
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="w-full rounded-2xl border border-black/5 bg-white p-4 text-sm font-medium outline-none focus:border-[#ff6b35] transition"
-      />
-    </div>
-  );
-}
-
-function ToggleField({ label, description, defaultOn }) {
-  const [isOn, setIsOn] = useState(defaultOn);
-  return (
-    <div className="flex items-center justify-between p-4 rounded-2xl hover:bg-black/5 transition">
-      <div>
-        <p className="text-sm font-bold">{label}</p>
-        <p className="text-[10px] text-black/40 font-medium">{description}</p>
+    <div className={`flex flex-col gap-4 p-5 rounded-2xl border transition-all ${isEditing ? 'bg-white border-[#ff6b35]/40 shadow-xl' : 'bg-transparent border-black/5'}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-[10px] font-black uppercase text-black/20 tracking-widest mb-1">{label}</p>
+          {!isEditing && <p className="text-sm font-bold text-[#1a1a1a]">{value || "No data provided"}</p>}
+        </div>
+        <button onClick={onEdit} className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all ${isEditing ? 'bg-[#ff6b35] text-white rotate-90' : 'bg-[#f7f3ec] text-black/40 hover:text-[#ff6b35]'}`}>
+          <i className={`fi ${isEditing ? 'fi-rr-cross-small' : 'fi-rr-pencil'} text-lg`}></i>
+        </button>
       </div>
-      <button 
-        onClick={() => setIsOn(!isOn)}
-        className={`h-6 w-11 rounded-full p-1 transition-colors duration-300 ${isOn ? 'bg-[#ff6b35]' : 'bg-black/10'}`}
-      >
-        <div className={`h-4 w-4 rounded-full bg-white transition-transform duration-300 ${isOn ? 'translate-x-5' : 'translate-x-0'}`} />
-      </button>
+      {isEditing && (
+        <input 
+          autoFocus
+          className="w-full rounded-xl border border-black/10 bg-[#f7f3ec]/50 p-4 text-sm font-semibold outline-none focus:border-[#ff6b35]"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+        />
+      )}
     </div>
   );
 }

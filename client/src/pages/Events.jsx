@@ -8,7 +8,14 @@ export default function Events() {
   const [events, setEvents] = useState([]);
   const [mySocieties, setMySocieties] = useState([]); // Track if user leads a society
   const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('active');
   const navigate = useNavigate();
+
+  const now = new Date();
+  const activeEvents = events.filter(e => new Date(e.startDate) >= now);
+  const pastEvents = events.filter(e => new Date(e.startDate) < now);
+
+  const displayedEvents = filter === 'active' ? activeEvents : pastEvents;
 
   useEffect(() => {
     // 1. Fetch User Profile for Sidebar and Role
@@ -117,39 +124,65 @@ useEffect(() => {
             )}
 
             {/* Filters Section */}
-            <section className="mb-5 rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <button className="rounded-full bg-[#ff6b35] px-4 py-1.5 text-xs font-semibold text-white">Active ({events.length})</button>
-                <div className="ml-auto flex min-w-[260px] items-center rounded-full border border-black/10 bg-[#faf8f2] px-4 py-2">
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={handleSearch}
-                    placeholder="Search events at MSIT..."
-                    className="w-full bg-transparent text-xs text-black/70 outline-none placeholder:text-black/35"
-                  />
-                </div>
-              </div>
-            </section>
+{/* Filters Section */}
+<section className="mb-5 rounded-2xl border border-black/10 bg-white p-4 shadow-sm">
+  <div className="flex flex-wrap items-center gap-2">
+    <button 
+      onClick={() => setFilter('active')}
+      className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+        filter === 'active' 
+        ? "bg-[#ff6b35] text-white shadow-md shadow-[#ff6b35]/20" 
+        : "bg-black/5 text-black/40 hover:bg-black/10"
+      }`}
+    >
+      Active ({activeEvents.length})
+    </button>
 
-            {/* Event Grid */}
-            <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {events.length > 0 ? (
-                events.map((event, index) => (
-                  <EventCard 
-                    key={event.id} 
-                    event={event} 
-                    onRefresh={() => { fetchEvents(); fetchUserRegistrations(); }}
-                    // 🔥 Added (userRegistrations || []) to ensure it's always an array
-                    isRegistered={(userRegistrations || []).some(reg => reg.id === event.id)} 
-                  />
-                ))
-              ) : (
-                <div className="col-span-full rounded-2xl bg-white p-12 text-center border border-black/5">
-                  <p className="text-sm text-black/40 italic">No events found matching your search.</p>
-                </div>
-              )}
-            </section>
+    <button 
+      onClick={() => setFilter('past')}
+      className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+        filter === 'past' 
+        ? "bg-[#ff6b35] text-white shadow-md shadow-black/20" 
+        : "bg-black/5 text-black/40 hover:bg-black/10"
+      }`}
+    >
+      Past ({pastEvents.length})
+    </button>
+
+    <div className="ml-auto flex min-w-[260px] items-center rounded-full border border-black/10 bg-[#faf8f2] px-4 py-2">
+      <input
+        type="text"
+        value={search}
+        onChange={handleSearch}
+        placeholder="Search events at MSIT..."
+        className="w-full bg-transparent text-xs text-black/70 outline-none placeholder:text-black/35"
+      />
+    </div>
+  </div>
+</section>
+
+{/* 🟢 The ONLY Event Grid you need */}
+<section className={`grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 transition-all duration-500 ${filter === 'past' ? 'opacity-70 grayscale-[0.3]' : ''}`}>
+  {displayedEvents.length > 0 ? (
+    displayedEvents.map((event, index) => (
+      <EventCard 
+        key={event.id} 
+        event={event} 
+        onRefresh={() => { fetchEvents(); fetchUserRegistrations(); }}
+        isRegistered={(userRegistrations || []).some(reg => reg.id === event.id)} 
+      />
+    ))
+  ) : (
+    <div className="col-span-full rounded-2xl bg-white/50 p-12 text-center border border-dashed border-black/10">
+      <p className="text-sm text-black/40 italic">No {filter} events found matching your search.</p>
+    </div>
+  )}
+</section>
+
+{/* ❌ DELETE THE OLD SECTION THAT WAS BELOW THIS LINE ❌ */}
+
+       
+            
           </main>
         </div>
       </div>
