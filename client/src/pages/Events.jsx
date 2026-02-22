@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import TopBar from '../components/TopBar'; // Integrating the Boutiq top bar
+import TopBar from '../components/TopBar'; 
 import EventCard from '../components/EventFeed';
+import Pagination from '../components/Pagination';
 
 export default function Events() {
   const [user, setUser] = useState(null);
@@ -12,6 +13,9 @@ export default function Events() {
   const [filter, setFilter] = useState('active');
   const [userRegistrations, setUserRegistrations] = useState([]);
   const navigate = useNavigate();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   // 1. Data Fetching
   useEffect(() => {
@@ -52,6 +56,7 @@ export default function Events() {
       const res = await fetch(url);
       const data = await res.json();
       setEvents(data);
+      setCurrentPage(1); // 💡 Reset to page 1 whenever search or data changes
     } catch (err) {
       console.error("Error fetching events:", err);
     }
@@ -62,23 +67,30 @@ export default function Events() {
     fetchEvents(e.target.value);
   };
 
-  // 2. Filtering Logic
+  // 🛠️ CORRECTED LOGIC SECTION
   const now = new Date();
+  
+  // 1. Filter the events first
   const activeEvents = events.filter(e => new Date(e.startDate) >= now);
   const pastEvents = events.filter(e => new Date(e.startDate) < now);
-  const displayedEvents = filter === 'active' ? activeEvents : pastEvents;
+  const filteredList = filter === 'active' ? activeEvents : pastEvents;
+
+  // 2. Calculate pagination based on the FILTERED list, not the raw array
+  const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  
+  // 3. This is the final 4 events to show
+  const currentEvents = filteredList.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
-    <div className="min-h-screen bg-[#f1f3f6]  text-[#1a1a1a] font-sans">
-      <div className="mx-auto flex  gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
-        {/* Sidebar Space */}
+    <div className="min-h-screen bg-[#f1f3f6] text-[#1a1a1a] font-sans">
+      <div className="mx-auto flex gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
         <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
            <Sidebar userRole={user?.role} />
         </div>
 
-        {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
-          
           <TopBar user={user} />
 
           <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pr-6">
@@ -99,7 +111,6 @@ export default function Events() {
             </button>
           </header>
 
-          {/* If user is not a lead, show the Placeholder Card */}
           {mySocieties.length === 0 && (
             <div className="mb-8 pr-6">
                <NoSocietyPlaceholder onRegister={() => navigate('/create-society')} />
@@ -107,13 +118,10 @@ export default function Events() {
           )}
 
           <div className="max-w-7xl pr-6 pb-20">
-            
-            {/* 📋 Filters Section (Boutiq Tab Style) */}
             <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 pb-4">
-              
               <div className="flex gap-6">
                 <button 
-                  onClick={() => setFilter('active')}
+                  onClick={() => { setFilter('active'); setCurrentPage(1); }}
                   className={`relative pb-2 text-sm font-medium transition-colors ${
                     filter === 'active' ? "text-[#ff6b35]" : "text-gray-500 hover:text-gray-700"
                   }`}
@@ -123,7 +131,7 @@ export default function Events() {
                 </button>
 
                 <button 
-                  onClick={() => setFilter('past')}
+                  onClick={() => { setFilter('past'); setCurrentPage(1); }}
                   className={`relative pb-2 text-sm font-medium transition-colors ${
                     filter === 'past' ? "text-[#ff6b35]" : "text-gray-500 hover:text-gray-700"
                   }`}
@@ -133,7 +141,6 @@ export default function Events() {
                 </button>
               </div>
 
-              {/* Minimal Search Input */}
               <div className="relative w-full sm:w-64">
                 <i className="fi fi-rr-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                 <input
@@ -141,15 +148,14 @@ export default function Events() {
                   value={search}
                   onChange={handleSearch}
                   placeholder="Filter events..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-4 text-sm text-gray-900 outline-none transition-all focus:bg-white focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-4 text-sm text-gray-900 outline-none focus:bg-white focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]"
                 />
               </div>
             </div>
 
-            {/* 🟢 Event Grid */}
-            <section className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 transition-opacity duration-500 ${filter === 'past' ? 'opacity-60 grayscale-[0.5]' : ''}`}>
-              {displayedEvents.length > 0 ? (
-                displayedEvents.map((event) => (
+            <section className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3`}>
+              {currentEvents.length > 0 ? (
+                currentEvents.map((event) => (
                   <EventCard 
                     key={event.id} 
                     event={event} 
@@ -159,15 +165,21 @@ export default function Events() {
                 ))
               ) : (
                 <div className="col-span-full py-20 text-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/50">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white border border-gray-200 text-gray-400 shadow-sm text-2xl">
-                    <i className="fi fi-rr-calendar-xmark"></i>
-                  </div>
                   <h3 className="text-base font-semibold text-gray-900">No events found</h3>
                   <p className="mt-1 text-sm text-gray-500">We couldn't find any {filter} events matching your search criteria.</p>
                 </div>
               )}
             </section>
-            
+
+            {/* 💡 Pagination placed inside the content container */}
+            <Pagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }} 
+            />
           </div>
         </main>
       </div>
@@ -175,7 +187,6 @@ export default function Events() {
   );
 }
 
-// 🏛️ Redesigned Placeholder Component
 function NoSocietyPlaceholder({ onRegister }) {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-6 shadow-sm gap-6">
@@ -186,7 +197,7 @@ function NoSocietyPlaceholder({ onRegister }) {
         <div>
           <h2 className="text-base font-semibold text-gray-900">Unlock Event Creation</h2>
           <p className="mt-1 text-sm text-gray-500 max-w-lg">
-            You aren't currently leading any societies at MSIT. Register your organization to unlock the ability to host and manage events.
+            You aren't currently leading any societies at MSIT. Register your organization to host and manage events.
           </p>
         </div>
       </div>
