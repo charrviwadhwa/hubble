@@ -1,217 +1,180 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import TopBar from '../components/TopBar';
 
 export default function MySocieties() {
-   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [societies, setSocieties] = useState([]);
   const [selectedSociety, setSelectedSociety] = useState(null);
   const [societyEvents, setSocietyEvents] = useState({ upcoming: [], past: [] });
   const [hubStats, setHubStats] = useState(null);
 
   useEffect(() => {
-    // Fetch societies the user is part of or all campus societies
+    // Fetch User Profile
+    fetch('http://localhost:3001/api/users/me/profile', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+    .then((res) => res.json())
+    .then((data) => setUser(data))
+    .catch(err => console.error(err));
+
+    // Fetch User's Societies
     fetch("http://localhost:3001/api/societies/my", {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(res => res.json())
-    .then(data => setSocieties(data));
+    .then(data => setSocieties(data))
+    .catch(err => console.error(err));
   }, []);
-  useEffect(() => {
-      // 1. Fetch Profile
-      fetch('http://localhost:3001/api/users/me/profile', {
+
+  const handleViewSociety = async (society) => {
+    setSelectedSociety(society);
+    
+    // Fetch Events
+    const resEvents = await fetch(`http://localhost:3001/api/events?societyId=${society.id}`); 
+    const dataEvents = await resEvents.json();
+    
+    // Fetch Hub Stats
+    const resStats = await fetch(`http://localhost:3001/api/societies/${society.id}/stats`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      })
-        .then((res) => res.json())
-        .then((data) => setUser(data));
-  
-    }, []);
-// Helper function for consistent formatting across Hubble
+    });
+    const dataStats = await resStats.json();
+    setHubStats(dataStats);
 
-
-const handleViewSociety = async (society) => {
-  setSelectedSociety(society);
-  
-  // 1. Fetch Events
-  const resEvents = await fetch(`http://localhost:3001/api/events?societyId=${society.id}`); 
-  const dataEvents = await resEvents.json();
-  
-  // 2. Fetch Hub Stats
-  const resStats = await fetch(`http://localhost:3001/api/societies/${society.id}/stats`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  });
-  const dataStats = await resStats.json();
-  setHubStats(dataStats);
-
-  const now = new Date();
-  
-  setSocietyEvents({
-    upcoming: dataEvents.filter(e => {
-      const eventDate = new Date(e.startDate || e.date);
-      return eventDate >= now;
-    }),
-    past: dataEvents.filter(e => {
-      const eventDate = new Date(e.startDate || e.date);
-      return eventDate < now;
-    })
-  });
-};
-  const initials = user?.name ? user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() : 'HB';
+    const now = new Date();
+    setSocietyEvents({
+      upcoming: dataEvents.filter(e => new Date(e.startDate || e.date) >= now),
+      past: dataEvents.filter(e => new Date(e.startDate || e.date) < now)
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-[#f3efe8] p-4 md:p-6">
-      <div className="mx-auto max-w-[1380px] rounded-[28px] border border-black/10 bg-[#f7f3ec] p-3 shadow-lg md:p-4">
-        <div className="flex flex-col gap-4 lg:flex-row">
-          <Sidebar />
+    <div className="min-h-screen bg-[#f1f3f6]  text-[#1a1a1a] font-sans">
+      <div className="mx-auto flex  gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
+        <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
+           <Sidebar userRole={user?.role} />
+        </div>
 
-          <main className="flex-1 rounded-2xl bg-[#f9f6ef] p-4 md:p-6 overflow-y-auto">
-            {!selectedSociety ? (
-              <>
-            
-                <header className="mb-4 rounded-2xl bg-white p-4 border border-black/10">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                    <p className="text-xs text-black/45">Management / Hub</p>
-                    <h1 className="text-3xl font-semibold tracking-tight text-[#1a1a1a]">My Societies</h1>
-                    </div>
+        <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
+          <TopBar user={user} />
 
-                    <div className="flex items-center gap-2">
-                    {/* 🏛️ NEW: CREATE SOCIETY BUTTON (Always visible for leads/members) */}
-                    <button 
-                        onClick={() => window.location.href = '/create-society'}
-                        className="flex items-center gap-2 rounded-full bg-[#ff6b35] px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-[#ff6b35]/20 transition-all hover:scale-105 active:scale-95"
-                    >
-                        <span className="text-lg">+</span> Register Society
-                    </button>
-
-                    <div className="ml-1 flex items-center gap-2 rounded-full border border-black/10 bg-white px-2 py-1.5 shadow-sm">
-                        <div className="grid h-8 w-8 place-items-center rounded-full bg-[#ff6b35] text-xs font-bold text-white">
-                        {initials}
-                        </div>
-                        <div className="pr-2 text-left">
-                        <p className="text-xs font-semibold text-[#1b1b1b]">{user?.name || 'Loading...'}</p>
-                        <p className="text-[10px] capitalize text-black/50">{user?.role || 'member'}</p>
-                        </div>
-                    </div>
-                    </div>
+          {!selectedSociety ? (
+            <div className="animate-in fade-in duration-500">
+              <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pr-6">
+                <div>
+                  <h1 className="text-3xl font-medium text-gray-900">My Societies</h1>
+                  <p className="text-sm text-gray-500 mt-1">Manage your college organizations and hubs.</p>
                 </div>
-                </header>
-                {/* List View Style (from your reference) */}
+                <button 
+                  onClick={() => navigate('/create-society')}
+                  className="rounded-full bg-[#ff6b35] px-6 py-2.5 text-sm font-medium text-white shadow-md hover:bg-[#e85a25] transition-colors flex items-center gap-2"
+                >
+                  <i className="fi fi-rr-plus text-xs"></i> Register Society
+                </button>
+              </header>
+
+              <div className="max-w-4xl pr-6 pb-20">
                 {societies.length > 0 ? (
-        <div className="space-y-3">
-          {societies.map(soc => (
-            <div key={soc.id} className="group flex items-center justify-between rounded-2xl border border-black/5 bg-white p-4 transition-all hover:border-[#ff6b35] hover:shadow-md">
-               {/* Society Card Content */}
-               <div className="flex items-center gap-4">
-                  <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#f7f3ec] text-xl font-bold text-[#ff6b35] overflow-hidden">
-                        {soc.logo ? (
-                            <img 
-                            src={`http://localhost:3001${soc.logo}`} // Maps to your Express static folder
-                            alt={soc.name} 
-                            className="h-full w-full object-cover" 
-                            />
-                        ) : (
-                            soc.name[0]
-                        )}
+                  <div className="grid gap-3">
+                    {societies.map(soc => (
+                      <div key={soc.id} className="group flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-[#ff6b35] hover:shadow-sm transition-all bg-white cursor-pointer" onClick={() => handleViewSociety(soc)}>
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center text-[#ff6b35] font-bold">
+                            {soc.logo ? (
+                              <img src={`http://localhost:3001${soc.logo}`} alt={soc.name} className="h-full w-full object-cover" />
+                            ) : soc.name[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-900">{soc.name}</h3>
+                            <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{soc.description}</p>
+                          </div>
                         </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">{soc.name}</h3>
-                    <p className="text-xs text-black/40 line-clamp-1">{soc.description}</p>
+                        <div className="text-[#ff6b35] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-sm font-medium">
+                          View Hub <i className="fi fi-rr-arrow-right"></i>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-               </div>
-               <button 
-                 onClick={() => handleViewSociety(soc)}
-                 className="rounded-full bg-[#161616] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#ff6b35]"
-               >
-                 View Hub
-               </button>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                    <div className="mb-4 h-16 w-16 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 text-2xl shadow-sm">
+                      <i className="fi fi-rr-bank"></i>
+                    </div>
+                    <h2 className="text-base font-semibold text-gray-900">No Societies Found</h2>
+                    <p className="mt-1 max-w-sm text-sm text-gray-500">You aren't currently leading any societies at MSIT. Ready to start something new?</p>
+                  </div>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        /* --- Clean Empty State --- */
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-6 h-20 w-20 rounded-[32px] bg-white border border-dashed border-black/10 grid place-items-center text-4xl opacity-30">
-            🏛️
-          </div>
-          <h2 className="text-xl font-bold text-black/70">No Societies Found</h2>
-          <p className="mt-2 max-w-xs text-sm text-black/30 leading-relaxed">
-            You aren't currently leading any societies at MSIT. Ready to start something new?
-          </p>
-          
-        </div>
-      )}
-    </>
-  ) :(
-              <SocietyDetail 
-                society={selectedSociety} 
-                events={societyEvents} 
-                stats={hubStats} // Pass the stats here
-                onBack={() => { setSelectedSociety(null); setHubStats(null); }} 
-                />
-            )}
-          </main>
-        </div>
+          ) : (
+            <SocietyDetail 
+              society={selectedSociety} 
+              events={societyEvents} 
+              stats={hubStats} 
+              onBack={() => { setSelectedSociety(null); setHubStats(null); }} 
+            />
+          )}
+        </main>
       </div>
     </div>
   );
 }
 
 function SocietyDetail({ society, events, stats, onBack }) {
-  const [showEdit, setShowEdit] = useState(false);
   const [viewingAttendeesFor, setViewingAttendeesFor] = useState(null);
   const [attendees, setAttendees] = useState([]);
 
-  // Inside SocietyDetail component
-const handleViewAttendees = async (event) => {
-  // 1. Check if event exists before doing anything
-  if (!event || !event.title) return;
-
-  setViewingAttendeesFor(event);
-  
-  try {
-    const res = await fetch(`http://localhost:3001/api/events/organizer/all-stats`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    });
-    
-    if (res.ok) {
-      const data = await res.json();
-      // 2. Use 'event.title' (the parameter) instead of 'viewingAttendeesFor.title'
-      const eventAttendees = data.filter(item => item.eventTitle === event.title);
-      setAttendees(eventAttendees);
+  const handleViewAttendees = async (event) => {
+    if (!event || !event.title) return;
+    setViewingAttendeesFor(event);
+    try {
+      const res = await fetch(`http://localhost:3001/api/events/organizer/all-stats`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAttendees(data.filter(item => item.eventTitle === event.title));
+      }
+    } catch (err) {
+      console.error("Failed to fetch attendees:", err);
     }
-  } catch (err) {
-    console.error("Failed to fetch attendees:", err);
-  }
-};
+  };
 
   if (viewingAttendeesFor) {
     return (
-      <div className="space-y-6">
-        <button onClick={() => setViewingAttendeesFor(null)} className="text-[10px] font-bold uppercase text-black/40 hover:text-black">
-          ← Back to Hub
+      <div className="max-w-4xl pr-6 pb-20 animate-in fade-in slide-in-from-right-4 duration-300">
+        <button onClick={() => setViewingAttendeesFor(null)} className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-[#ff6b35] transition-colors">
+          <i className="fi fi-rr-arrow-left"></i> Back to Hub
         </button>
-        <div className="rounded-[32px] bg-white p-8 border border-black/5 shadow-sm">
-          <h2 className="text-2xl font-black mb-2">{viewingAttendeesFor.title}</h2>
-          <p className="text-sm text-black/40 mb-6">Attendee Roster</p>
-          <div className="overflow-x-auto">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-gray-900">{viewingAttendeesFor.title}</h2>
+          <p className="text-sm text-gray-500 mb-6 mt-1">Attendee Roster</p>
+          <div className="overflow-hidden rounded-xl border border-gray-100">
             <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-50 text-[10px] font-bold uppercase text-black/30">
-                  <th className="pb-4 px-2">Student Name</th>
-                  <th className="pb-4 px-2">Email</th>
-                  <th className="pb-4 px-2 text-right">Status</th>
+              <thead className="bg-gray-50">
+                <tr className="border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="py-3 px-4">Student Name</th>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4 text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100">
                 {attendees.map((person, i) => (
-                  <tr key={i} className="group hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 px-2 text-sm font-semibold text-gray-700">{person.studentName}</td>
-                    <td className="py-4 px-2 text-sm text-gray-400">{person.studentEmail}</td>
-                    <td className="py-4 px-2 text-right">
-                       <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-bold uppercase">Registered</span>
+                  <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-3 px-4 text-sm font-medium text-gray-900">{person.studentName}</td>
+                    <td className="py-3 px-4 text-sm text-gray-500">{person.studentEmail}</td>
+                    <td className="py-3 px-4 text-right">
+                       <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-md text-xs font-medium border border-green-200">Registered</span>
                     </td>
                   </tr>
                 ))}
+                {attendees.length === 0 && (
+                  <tr>
+                    <td colSpan="3" className="py-8 text-center text-sm text-gray-500 italic">No students registered yet.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -221,179 +184,137 @@ const handleViewAttendees = async (event) => {
   }
 
   return (
-    <div className="space-y-8">
-      <button onClick={onBack} className="text-[10px] font-bold uppercase tracking-widest text-black/40 hover:text-black">← Back to List</button>
+    <div className="max-w-4xl pr-6 pb-20 space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+      <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-[#ff6b35] transition-colors">
+        <i className="fi fi-rr-arrow-left"></i> Back to Societies
+      </button>
       
       {/* 1. Hub Stats Header */}
-      <div className="rounded-[32px] bg-white p-8 border border-black/5 shadow-sm">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-6">
-            <div className="grid h-14 w-14 place-items-center rounded-xl bg-[#f7f3ec] text-xl font-bold text-[#ff6b35] overflow-hidden">
-                    {society.logo ? (
-                        <img 
-                        src={`http://localhost:3001${society.logo}`} 
-                        alt={society.name} 
-                        className="h-full w-full object-cover" 
-                        />
-                    ) : (
-                        society.name[0]
-                    )}
-                    </div>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">{society?.name}</h2>
-              <p className="text-black/40 text-sm">{society?.category}</p>
-            </div>
+      <section className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+        <div className="flex items-center gap-6">
+          <div className="h-20 w-20 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-3xl font-bold text-[#ff6b35] overflow-hidden">
+            {society.logo ? (
+              <img src={`http://localhost:3001${society.logo}`} alt={society.name} className="h-full w-full object-cover" />
+            ) : society.name[0].toUpperCase()}
           </div>
-          
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">{society?.name}</h2>
+            <p className="text-sm text-gray-500 font-medium mt-1">{society?.category}</p>
+          </div>
+        </div>
+        <div className="flex gap-4 w-full md:w-auto">
+          <QuickStat label="Registered" value={stats?.stats?.totalRegistrations || 0} icon="fi-rr-users" />
+          <QuickStat label="Attended" value={stats?.stats?.totalAttended || 0} icon="fi-rr-checkbox" />
+        </div>
+      </section>
+
+      {/* 2. Achievement Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-gray-900 mb-6">Society Milestones</h3>
+          <div className="flex justify-around">
+            <HubBadge icon="fi-rr-leaf" title="Pioneer" unlocked={stats?.badges?.pioneer} />
+            <HubBadge icon="fi-rr-flame" title="Active" unlocked={stats?.badges?.regular} />
+            <HubBadge icon="fi-rr-crown" title="Lead" unlocked={stats?.badges?.organizer} />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-gray-900 mb-6">Society Insights</h3>
           <div className="flex gap-4">
-            <StatPill label="Registered" value={stats?.stats?.totalRegistrations} />
-            <StatPill label="Attended" value={stats?.stats?.totalAttended} />
-            <button onClick={() => setShowEdit(true)} className="h-14 w-14 rounded-2xl border border-black/10 flex items-center justify-center hover:bg-gray-50 transition">⚙️</button>
+            <QuickStat label="Total Events" value={(events?.upcoming?.length || 0) + (events?.past?.length || 0)} icon="fi-rr-calendar" />
+            <QuickStat label="Impact Score" value={(stats?.stats?.totalAttended || 0) * 10} icon="fi-rr-star" />
           </div>
         </div>
       </div>
 
-      {/* 2. Achievement Section - Added this to make HubBadge visible */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div className="rounded-[32px] bg-white p-6 border border-black/5 shadow-sm">
-    <h3 className="text-lg font-bold mb-6">Society Milestones</h3>
-    <div className="flex justify-around">
-      <HubBadge icon="🌱" title="Pioneer" unlocked={stats?.badges?.pioneer} color="bg-orange-50" />
-      <HubBadge icon="🔥" title="Active" unlocked={stats?.badges?.regular} color="bg-blue-50" />
-      <HubBadge icon="👑" title="Lead" unlocked={stats?.badges?.organizer} color="bg-purple-50" />
-    </div>
-  </div>
-
-  {/* 🚀 NEW: Using QuickStat for Society Insights */}
-  <div className="rounded-[32px] bg-white p-6 border border-black/5 shadow-sm">
-    <h3 className="text-lg font-bold mb-6">Society Insights</h3>
-    <div className="flex gap-4 overflow-x-auto pb-2">
-      <QuickStat 
-        label="Total Events" 
-        value={(events?.upcoming?.length || 0) + (events?.past?.length || 0)} 
-        icon="📅" 
-      />
-      <QuickStat 
-        label="Impact Score" 
-        value={stats?.stats?.totalAttended * 10 || 0} 
-        icon="✨" 
-      />
-    </div>
-  </div>
-</div>
-
       {/* 3. Event Lists Section */}
-      <div className="space-y-12">
+      <div className="space-y-8">
         <section>
-          <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-800">
+          <h3 className="mb-4 text-base font-semibold text-gray-900 flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-green-500"></span> Upcoming Events
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {events?.upcoming?.map(e => (
               <SmallEventCard key={e.id} event={e} onClick={() => handleViewAttendees(e)} />
             ))}
-            {(!events?.upcoming || events.upcoming.length === 0) && <p className="text-sm text-black/30 italic">No active events.</p>}
+            {(!events?.upcoming || events.upcoming.length === 0) && (
+              <div className="col-span-full py-8 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
+                <p className="text-sm text-gray-500 italic">No active events.</p>
+              </div>
+            )}
           </div>
         </section>
 
         <section>
-  <h3 className="mb-4 flex items-center gap-2 font-bold text-gray-800 uppercase text-[11px] tracking-widest">
-    <span className="h-2 w-2 rounded-full bg-gray-300"></span> Past Archive
-  </h3>
-  
-  {/* The grayscale container makes all nested images look archived */}
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-    {events?.past?.map(e => (
-      <SmallEventCard 
-        key={e.id} 
-        event={e} 
-        onClick={() => handleViewAttendees(e)} 
-      />
-    ))}
-    {(!events?.past || events.past.length === 0) && (
-      <p className="text-sm text-black/30 italic">Archive is empty.</p>
-    )}
-  </div>
-</section>
+          <h3 className="mb-4 text-base font-semibold text-gray-900 flex items-center gap-2 opacity-60">
+            <span className="h-2 w-2 rounded-full bg-gray-400"></span> Past Archive
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+            {events?.past?.map(e => (
+              <SmallEventCard key={e.id} event={e} onClick={() => handleViewAttendees(e)} />
+            ))}
+            {(!events?.past || events.past.length === 0) && (
+              <p className="text-sm text-gray-400 italic">Archive is empty.</p>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
 }
+
 function SmallEventCard({ event, onClick }) {
+  const formatDate = (dateString) => {
+    if (!dateString) return "TBA";
+    return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   return (
-    <div 
-      onClick={onClick}
-      className="group flex items-center gap-4 rounded-2xl border border-black/5 bg-white p-3 transition-all hover:border-[#ff6b35]/20 hover:shadow-md cursor-pointer"
-    >
-      {/* Event Thumbnail */}
-      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-[#f7f3ec] border border-black/5">
+    <div onClick={onClick} className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-3 transition-all hover:border-[#ff6b35] hover:shadow-sm cursor-pointer">
+      <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300">
         {event.banner ? (
-          <img 
-            src={`http://localhost:3001${event.banner}`} 
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
-            alt="Event"
-          />
+          <img src={`http://localhost:3001${event.banner}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Event" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-[#ff6b35]/30">
-            <i className="fi fi-rr-picture text-xl"></i>
-          </div>
+          <i className="fi fi-rr-picture text-xl"></i>
         )}
       </div>
-
-      {/* Event Info */}
       <div className="flex-1 min-w-0">
-        <h4 className="truncate text-sm font-black text-[#1a1a1a]">{event.title}</h4>
-        <div className="flex items-center gap-2 text-[10px] font-bold text-black/30 mt-0.5">
-                <i className="fi fi-rr-calendar-clock text-[#ff6b35]"></i>
-                <span>{formatDate(event.startDate)}</span>
-                </div>
+        <h4 className="truncate text-sm font-semibold text-gray-900">{event.title}</h4>
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+          <i className="fi fi-rr-calendar text-gray-400"></i>
+          <span>{formatDate(event.startDate)}</span>
+        </div>
       </div>
-
-      <div className="h-8 w-8 rounded-full bg-[#f7f3ec] flex items-center justify-center text-black/20 group-hover:bg-[#ff6b35]/10 group-hover:text-[#ff6b35] transition-colors">
-        <i className="fi fi-rr-angle-small-right text-xl"></i>
+      <div className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 group-hover:bg-[#ff6b35]/10 group-hover:text-[#ff6b35] transition-colors">
+        <i className="fi fi-rr-arrow-right text-sm"></i>
       </div>
     </div>
   );
 }
-function StatPill({ label, value }) {
-  return (
-    <div className="bg-[#f7f3ec] p-4 rounded-2xl min-w-[110px] text-center border border-black/5">
-      <p className="text-[9px] font-bold text-black/30 uppercase tracking-tighter">{label}</p>
-      <p className="text-2xl font-black text-[#1a1a1a]">{value || 0}</p>
-    </div>
-  );
-}
 
-// 2. HubBadge: Shows the gamified society achievements
-function HubBadge({ icon, title, unlocked, color }) {
-  return (
-    <div className={`text-center transition-all duration-500 ${unlocked ? 'opacity-100 scale-100' : 'opacity-20 grayscale scale-90'}`}>
-      <div className={`h-16 w-16 ${color} rounded-full flex items-center justify-center text-2xl mb-2 shadow-inner border border-black/5`}>
-        {icon}
-      </div>
-      <p className="text-[9px] font-black uppercase text-black/60">{title}</p>
-    </div>
-  );
-}
-
-// 3. QuickStat: Used for general stats if needed
+/* Boutiq Styled Sub-components */
 function QuickStat({ label, value, icon }) {
   return (
-    <div className="rounded-3xl bg-white p-4 text-center border border-black/5 shadow-sm min-w-[100px]">
-      <div className="text-lg mb-1">{icon}</div>
-      <p className="text-xl font-black">{value || 0}</p>
-      <p className="text-[9px] font-bold uppercase text-black/30 tracking-wider">{label}</p>
+    <div className="flex-1 flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 min-w-[130px]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-gray-200 text-gray-500 shadow-sm">
+        <i className={`fi ${icon} text-lg mt-0.5`}></i>
+      </div>
+      <div>
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className="text-xl font-bold text-gray-900 leading-tight">{value || 0}</p>
+      </div>
     </div>
   );
 }
-const formatDate = (dateString) => {
-  if (!dateString) return "TBA";
-  const date = new Date(dateString);
-  
-  // 'en-GB' uses DD/MM/YYYY
-  return date.toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-};
+
+function HubBadge({ icon, title, unlocked }) {
+  return (
+    <div className={`flex flex-col items-center gap-2 transition-all duration-500 ${unlocked ? 'opacity-100' : 'opacity-40 grayscale'}`}>
+      <div className={`flex h-14 w-14 items-center justify-center rounded-full border-2 shadow-sm ${unlocked ? 'border-[#ff6b35]/20 bg-[#ff6b35]/5 text-[#ff6b35]' : 'border-gray-200 bg-gray-50 text-gray-400'}`}>
+        <i className={`fi ${icon} text-xl mt-1`}></i>
+      </div>
+      <p className="text-xs font-semibold text-gray-700">{title}</p>
+    </div>
+  );
+}

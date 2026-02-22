@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import TopBar from '../components/TopBar'; // Integrates the navigation bar
 
-// Categories for general classification
 const CATEGORIES = ["Technical", "Cultural", "Sports", "Literary", "Entrepreneurship", "Social Service", "Other"];
-
-// Specific Event Types for Hubble
 const EVENT_TYPES = ["Workshop", "Seminar", "Hackathon", "Competition", "Cultural Fest", "Sports Event", "Other"];
 
 export default function CreateEvent() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [mySocieties, setMySocieties] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const [banner, setBanner] = useState(null);
   const [preview, setPreview] = useState(null);
   const [formData, setFormData] = useState({
     title: '', 
     societyId: '', 
     category: 'Technical', 
-    eventType: 'Workshop', // New field
+    eventType: 'Workshop',
     shortDescription: '', 
     longDescription: '',
     startDate: '', 
@@ -25,165 +29,265 @@ export default function CreateEvent() {
   });
 
   useEffect(() => {
+    const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+
+    // Fetch User for TopBar and Sidebar
+    fetch('http://localhost:3001/api/users/me/profile', { headers })
+      .then(res => res.json())
+      .then(data => setUser(data))
+      .catch(err => console.error("Profile Fetch Error:", err));
+
     // Fetch societies where the current user is the owner
-    fetch("http://localhost:3001/api/societies/my", {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-    .then(res => res.json())
-    .then(data => {
-      setMySocieties(data);
-      if (data.length > 0) setFormData(prev => ({ ...prev, societyId: data[0].id }));
-    });
+    fetch("http://localhost:3001/api/societies/my", { headers })
+      .then(res => res.json())
+      .then(data => {
+        setMySocieties(Array.isArray(data) ? data : []);
+        if (data.length > 0) setFormData(prev => ({ ...prev, societyId: data[0].id }));
+      })
+      .catch(err => console.error("Societies Fetch Error:", err));
   }, []);
 
   const handleBannerChange = (e) => {
-  const file = e.target.files[0];
-  
-  // Check if file is > 10MB
-  if (file.size > 10 * 1024 * 1024) {
-    alert("This image is too heavy! Please choose a file smaller than 10MB.");
-    e.target.value = null; // Clear the input
-    return;
-  }
+    const file = e.target.files[0];
+    if (!file) return;
 
-  setBanner(file);
-  setPreview(URL.createObjectURL(file));
-};
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Only image files (JPG, PNG, WEBP) are allowed!");
+      e.target.value = null;
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("This image is too heavy! Please choose a file smaller than 10MB.");
+      e.target.value = null;
+      return;
+    }
+
+    setError("");
+    setBanner(file);
+    setPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     const data = new FormData();
     Object.keys(formData).forEach(key => data.append(key, formData[key]));
     if (banner) data.append('banner', banner);
 
-    const res = await fetch('http://localhost:3001/api/events', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      body: data 
-    });
+    try {
+      const res = await fetch('http://localhost:3001/api/events', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: data 
+      });
 
-    if (res.ok) {
-      alert("Event Published! 🚀");
-      window.location.href = '/my-societies';
+      const resData = await res.json();
+
+      if (res.ok) {
+        navigate('/events'); // Redirect to Events feed on success
+      } else {
+        setError(resData.error || resData.message || "Failed to create event.");
+      }
+    } catch (err) {
+      console.error("Submit Error:", err);
+      setError("A network error occurred.");
+    } finally {
+      setLoading(false);
     }
-    if (!res.ok) {
-    // This is where you show the red error message to the MSIT user
-    alert(result.error || result.message); 
-    return;
-  }
   };
 
   return (
-    <div className="min-h-screen bg-[#f3efe8] p-4 md:p-6 text-[#1a1a1a]">
-      <div className="mx-auto max-w-[1380px] rounded-[28px] border border-black/10 bg-[#f7f3ec] p-3 shadow-lg md:p-4">
-        <div className="flex flex-col gap-4 lg:flex-row">
-          <Sidebar />
-
-          <main className="flex-1 rounded-2xl bg-[#f9f6ef] p-6 md:p-10 overflow-y-auto">
-            <header className="mb-10">
-              <h1 className="text-4xl font-black">Schedule Event</h1>
-              <p className="text-sm text-black/40">Launch your next MSIT organization event</p>
-            </header>
-
-            <form onSubmit={handleSubmit} className="max-w-4xl space-y-8">
-              {/* Banner Upload Section */}
-              <div 
-                className="relative h-48 w-full rounded-[32px] border-2 border-dashed border-black/10 bg-white grid place-items-center overflow-hidden cursor-pointer"
-                onClick={() => document.getElementById('bannerInput').click()}
-              >
-                {preview ? <img src={preview} className="h-full w-full object-cover" /> : <p className="text-[10px] font-bold text-black/20">Click to upload event banner</p>}
-                <input id="bannerInput" type="file" hidden onChange={handleBannerChange} />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="Event Title" value={formData.title} onChange={v => setFormData({...formData, title: v})} />
-                
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-black/30 ml-2">Hosting Society</label>
-                  <select 
-                    className="w-full rounded-2xl border border-black/5 bg-white p-4 text-sm outline-none focus:border-[#ff6b35]"
-                    value={formData.societyId}
-                    onChange={e => setFormData({...formData, societyId: e.target.value})}
-                  >
-                    {mySocieties.map(soc => <option key={soc.id} value={soc.id}>{soc.name}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Two Dropdowns: Category and Event Type */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-black/30 ml-2">Category</label>
-                  <select 
-                    className="w-full rounded-2xl border border-black/5 bg-white p-4 text-sm outline-none focus:border-[#ff6b35]"
-                    value={formData.category}
-                    onChange={e => setFormData({...formData, category: e.target.value})}
-                  >
-                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-black/30 ml-2">Event Type</label>
-                  <select 
-                    className="w-full rounded-2xl border border-black/5 bg-white p-4 text-sm outline-none focus:border-[#ff6b35]"
-                    value={formData.eventType}
-                    onChange={e => setFormData({...formData, eventType: e.target.value})}
-                  >
-                    {EVENT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Description Fields */}
-              <Input label="Short Hook" value={formData.shortDescription} onChange={v => setFormData({...formData, shortDescription: v})} placeholder="One sentence to grab attention" />
-              
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-black/30 ml-2">Long Description</label>
-                <textarea 
-                  className="w-full h-32 rounded-2xl border border-black/5 bg-white p-4 text-sm outline-none focus:border-[#ff6b35]"
-                  value={formData.longDescription}
-                  onChange={e => setFormData({...formData, longDescription: e.target.value})}
-                />
-              </div>
-
-              {/* Dates and Location */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="Location (Room No. or Online Link)" value={formData.location} onChange={v => setFormData({...formData, location: v})} />
-                <DateTime label="Registration Deadline" value={formData.registrationDeadline} onChange={v => setFormData({...formData, registrationDeadline: v})} />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <DateTime label="Start Date & Time" value={formData.startDate} onChange={v => setFormData({...formData, startDate: v})} />
-                <DateTime label="End Date (Optional)" value={formData.endDate} onChange={v => setFormData({...formData, endDate: v})} />
-              </div>
-
-              <button type="submit" className="w-full py-5 bg-[#161616] text-white rounded-3xl font-bold hover:bg-[#ff6b35] transition shadow-xl">
-                Blast Event 🚀
-              </button>
-            </form>
-          </main>
+    <div className="min-h-screen bg-[#f1f3f6]  text-[#1a1a1a] font-sans">
+      <div className="mx-auto flex  gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
+        {/* Sidebar Space */}
+        <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
+           <Sidebar userRole={user?.role} />
         </div>
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
+          
+          <TopBar user={user} />
+
+          <button 
+            onClick={() => navigate(-1)}
+            className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-[#ff6b35] transition-colors"
+          >
+            <i className="fi fi-rr-arrow-left"></i> Back
+          </button>
+
+          <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pr-6">
+            <div>
+              <h1 className="text-3xl font-medium text-gray-900">Schedule Event</h1>
+              <p className="text-sm text-gray-500 mt-1">Publish a new event to the MSIT Hubble feed.</p>
+            </div>
+          </header>
+
+          {error && (
+            <div className="mb-8 max-w-3xl rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600 border border-red-100">
+              <i className="fi fi-rr-triangle-warning mr-2"></i> {error}
+            </div>
+          )}
+
+          <div className="max-w-3xl pr-6 pb-20">
+            <form onSubmit={handleSubmit} className="space-y-10 animate-in fade-in duration-500">
+              
+              {/* Banner Upload Section */}
+              <section>
+                <h3 className="text-base font-semibold text-gray-900 mb-6">Event Banner</h3>
+                <div className="flex items-center gap-6">
+                  <div className="h-32 w-48 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
+                    {preview ? (
+                      <img src={preview} alt="Banner Preview" className="h-full w-full object-cover" />
+                    ) : (
+                      <i className="fi fi-rr-picture text-2xl text-gray-300"></i>
+                    )}
+                  </div>
+                  <div>
+                    <input 
+                      type="file" 
+                      id="bannerUpload"
+                      accept="image/png, image/jpeg, image/webp" 
+                      onChange={handleBannerChange} 
+                      className="hidden" 
+                    />
+                    <label 
+                      htmlFor="bannerUpload"
+                      className="cursor-pointer text-sm font-medium text-[#ff6b35] hover:text-[#e85a25]"
+                    >
+                      Upload Banner Image
+                    </label>
+                    <p className="mt-1 text-xs text-gray-500">Recommended: 16:9 ratio. JPG or PNG. Max 10MB.</p>
+                  </div>
+                </div>
+              </section>
+
+              <hr className="border-gray-200" />
+
+              {/* Basic Information */}
+              <section className="space-y-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Basic Information</h3>
+                
+                <BoutiqInput label="Event Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="e.g. Annual Tech Summit" required />
+                
+                <BoutiqSelect 
+                  label="Hosting Society" 
+                  value={formData.societyId} 
+                  onChange={e => setFormData({...formData, societyId: e.target.value})}
+                  options={mySocieties.map(soc => ({ value: soc.id, label: soc.name }))}
+                />
+                
+                <BoutiqSelect 
+                  label="Category" 
+                  value={formData.category} 
+                  onChange={e => setFormData({...formData, category: e.target.value})}
+                  options={CATEGORIES.map(cat => ({ value: cat, label: cat }))}
+                />
+
+                <BoutiqSelect 
+                  label="Event Type" 
+                  value={formData.eventType} 
+                  onChange={e => setFormData({...formData, eventType: e.target.value})}
+                  options={EVENT_TYPES.map(type => ({ value: type, label: type }))}
+                />
+              </section>
+
+              <hr className="border-gray-200" />
+
+              {/* Event Description */}
+              <section className="space-y-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Descriptions</h3>
+                
+                <BoutiqInput label="Short Hook" value={formData.shortDescription} onChange={e => setFormData({...formData, shortDescription: e.target.value})} placeholder="A one-sentence pitch to grab attention" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start gap-4">
+                  <label className="text-sm text-gray-700 pt-2">Full Details</label>
+                  <textarea 
+                    className="w-full max-w-md h-32 rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35] resize-none"
+                    value={formData.longDescription}
+                    onChange={e => setFormData({...formData, longDescription: e.target.value})}
+                    placeholder="Provide the complete agenda, prerequisites, or rules..."
+                  />
+                </div>
+              </section>
+
+              <hr className="border-gray-200" />
+
+              {/* Logistics */}
+              <section className="space-y-6">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Logistics & Schedule</h3>
+                
+                <BoutiqInput label="Location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="Room 402 or Google Meet link" required />
+                
+                <BoutiqInput type="datetime-local" label="Start Date" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} required />
+                
+                <BoutiqInput type="datetime-local" label="End Date" value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} />
+                
+                <BoutiqInput type="datetime-local" label="Registration Deadline" value={formData.registrationDeadline} onChange={e => setFormData({...formData, registrationDeadline: e.target.value})} />
+              </section>
+
+              <div className="pt-6">
+                <button 
+                  type="submit" 
+                  disabled={loading || mySocieties.length === 0}
+                  className="w-full max-w-md ml-0 md:ml-[166px] rounded-xl bg-[#ff6b35] px-6 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-[#e85a25] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                >
+                  {loading ? 'Publishing...' : (
+                    <>
+                      Publish Event <i className="fi fi-rr-paper-plane text-xs mt-0.5"></i>
+                    </>
+                  )}
+                </button>
+                {mySocieties.length === 0 && (
+                  <p className="text-xs text-red-500 mt-2 md:ml-[166px]">You must create a Society first before hosting an event.</p>
+                )}
+              </div>
+
+            </form>
+          </div>
+        </main>
       </div>
     </div>
   );
 }
 
-// Helper Inputs
-function Input({ label, value, onChange, placeholder }) {
+/* --- BOUTIQ-STYLE HELPER COMPONENTS --- */
+
+function BoutiqInput({ label, value, onChange, placeholder, type = "text", required = false }) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase text-black/30 ml-2">{label}</label>
-      <input className="w-full rounded-2xl border border-black/5 bg-white p-4 text-sm outline-none focus:border-[#ff6b35]" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
+    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+      <label className="text-sm text-gray-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input 
+        type={type} 
+        value={value} 
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]"
+      />
     </div>
   );
 }
 
-function DateTime({ label, value, onChange }) {
+function BoutiqSelect({ label, value, onChange, options }) {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase text-black/30 ml-2">{label}</label>
-      <input type="datetime-local" className="w-full rounded-2xl border border-black/5 bg-white p-4 text-xs outline-none focus:border-[#ff6b35]" value={value} onChange={e => onChange(e.target.value)} />
+    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+      <label className="text-sm text-gray-700">{label}</label>
+      <select 
+        value={value} 
+        onChange={onChange}
+        className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35] bg-white"
+      >
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
     </div>
   );
 }

@@ -7,25 +7,23 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
   const [showPopup, setShowPopup] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 1. Logic for Capacity and Status
   const capacity = event.capacity || 100;
   const attendees = event.attendeeCount || 0;
-  const ratio = Math.max(0, Math.min(100, Math.round((attendees / capacity) * 100)));
   const isFull = attendees >= capacity;
 
-  // 2. Deadline Logic (Compared against current date: Feb 21, 2026)
   const now = new Date();
   const deadline = event.registrationDeadline ? new Date(event.registrationDeadline) : null;
   const isClosed = deadline && now > deadline;
 
   const handleApply = async (e) => {
-    e.stopPropagation(); // Prevent card navigation
+    e.stopPropagation(); 
     
     if (isClosed) {
       alert("Sorry, registration for this event has closed!");
       return;
     }
 
+    // Prevents double-clicks without changing the UI
     if (isRegistered || loading || isFull) return;
 
     setLoading(true);
@@ -40,13 +38,11 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
 
       if (res.ok) {
         confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#ff6b35', '#161616', '#ffffff']
+          particleCount: 100, spread: 70, origin: { y: 0.6 },
+          colors: ['#ff6b35', '#ffffff', '#e85a25']
         });
         setShowPopup(true);
-        onRefresh(); 
+        if (onRefresh) onRefresh(); 
       } else {
         const data = await res.json();
         alert(data.message);
@@ -58,33 +54,35 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
     }
   };
 
-  // 3. Format Date as DD/MM/YYYY
   const dateLabel = event.startDate 
     ? new Date(event.startDate).toLocaleDateString('en-GB', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
+        day: '2-digit', month: 'short', year: 'numeric'
       })
     : "TBA";
 
   return (
     <>
-      <article className="group flex flex-col rounded-[24px] bg-white p-3 shadow-sm ring-1 ring-black/5 transition-all hover:-translate-y-1 hover:shadow-xl hover:ring-[#ff6b35]/20">
+      <article className="group flex flex-col rounded-2xl bg-white p-3 border border-gray-200 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-[#ff6b35]">
         
         {/* Banner Section */}
-        <div className="relative mb-3 h-36 w-full overflow-hidden rounded-[18px] bg-slate-100">
+        <div 
+          onClick={() => navigate(`/events/${event.id}`)}
+          className="relative mb-4 h-36 w-full overflow-hidden rounded-xl bg-gray-50 cursor-pointer border border-gray-100"
+        >
           {event.banner ? (
             <img 
               src={`http://localhost:3001${event.banner}`} 
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               alt={event.title}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[#f7f3ec]">
-              <i className="fi fi-rr-calendar-star text-2xl text-black/10"></i>
+            <div className="flex h-full w-full items-center justify-center text-gray-300">
+              <i className="fi fi-rr-picture text-2xl"></i>
             </div>
           )}
           
           {/* Event Type Tag */}
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-black/70 backdrop-blur-sm shadow-sm">
+          <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-md bg-white/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-700 backdrop-blur-sm shadow-sm">
             <i className="fi fi-rr-apps text-[#ff6b35]"></i> 
             {event.eventType || 'General'}
           </div>
@@ -92,45 +90,51 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
 
         <div className="flex flex-1 flex-col px-1">
           {/* Metadata */}
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#ff6b35]">
-            <i className="fi fi-rr-calendar-clock flex items-center"></i>
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[#ff6b35] mb-1">
+            <i className="fi fi-rr-calendar"></i>
             <span>{dateLabel}</span>
           </div>
 
-          <h3 className="mt-1 line-clamp-1 text-sm font-black text-[#1a1a1a]">{event.title}</h3>
+          <h3 
+            onClick={() => navigate(`/events/${event.id}`)}
+            className="line-clamp-1 text-base font-semibold text-gray-900 cursor-pointer hover:text-[#ff6b35] transition-colors"
+          >
+            {event.title}
+          </h3>
           
-          <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-black/30">
-            <i className="fi fi-rr-marker flex items-center"></i>
+          <div className="mt-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
+            <i className="fi fi-rr-marker"></i>
             <span className="truncate">{event.location || 'MSIT Campus'}</span>
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-auto grid grid-cols-1 gap-2 border-t border-black/[0.03] pt-4">
+          <div className="mt-6 grid grid-cols-2 gap-2">
             <button 
-              onClick={handleApply}
-              disabled={isRegistered || isFull || isClosed || loading}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[11px] font-black uppercase tracking-widest transition-all ${
-                isRegistered 
-                  ? "bg-[#059669]/10 text-[#059669] border border-[#059669]/20 cursor-default" 
-                  : (isFull || isClosed)
-                  ? "bg-black/5 text-black/20 cursor-not-allowed border border-black/5" 
-                  : "bg-[#161616] text-white hover:bg-[#ff6b35] shadow-lg active:scale-95"
-              }`}
+              onClick={() => navigate(`/events/${event.id}`)} 
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-50 border border-gray-200 py-2.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
             >
-              <i className={`fi ${
-                isRegistered ? 'fi-rr-badge-check' : 
-                (isFull || isClosed) ? 'fi-rr-lock' : 
-                'fi-rr-rocket-lunch'
-              } flex items-center`}></i>
-              
-              {loading ? "Wait..." : isRegistered ? "Applied" : isClosed ? "Closed" : isFull ? "Event Full" : "Apply Now"}
+              Details
             </button>
             
             <button 
-              onClick={() => navigate(`/events/${event.id}`)} 
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f7f3ec] py-2.5 text-[11px] font-black uppercase tracking-widest text-black/60 transition-all hover:bg-black/5 hover:text-black"
+              onClick={handleApply}
+              disabled={isRegistered || isFull || isClosed || loading}
+              className={`flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold transition-all ${
+                isRegistered 
+                  ? "bg-green-50 text-green-700 border border-green-200 cursor-default" 
+                  : (isFull || isClosed)
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" 
+                  : "bg-[#ff6b35] text-white hover:bg-[#e85a25] shadow-sm"
+              }`}
             >
-              <i className="fi fi-rr-eye flex items-center"></i> View Details
+              <i className={`fi ${
+                isRegistered ? 'fi-rr-check' : 
+                (isFull || isClosed) ? 'fi-rr-lock' : 
+                'fi-rr-plus'
+              } mt-0.5`}></i>
+              
+              {/* Removed the "Wait..." text here */}
+              {isRegistered ? "Applied" : isClosed ? "Closed" : isFull ? "Full" : "Join"}
             </button>
           </div>
         </div>
@@ -138,16 +142,18 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
 
       {/* Success Popup Modal */}
       {showPopup && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-[32px] bg-white p-8 text-center shadow-2xl animate-in fade-in zoom-in duration-300">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-50 text-4xl">🎉</div>
-            <h2 className="mb-2 text-2xl font-black text-[#1a1a1a]">Spot Secured!</h2>
-            <p className="mb-8 text-sm text-black/40 leading-relaxed">
-              You are registered for <span className="font-bold text-black">{event.title}</span>. See you at MSIT!
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-2xl animate-in zoom-in-95 duration-300 border border-gray-100">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-green-600 text-3xl border border-green-100">
+              <i className="fi fi-rr-check-circle"></i>
+            </div>
+            <h2 className="mb-2 text-2xl font-semibold text-gray-900">Spot Secured!</h2>
+            <p className="mb-8 text-sm text-gray-500 leading-relaxed">
+              You are registered for <span className="font-semibold text-gray-800">{event.title}</span>. See you at MSIT!
             </p>
             <button 
               onClick={() => setShowPopup(false)}
-              className="w-full rounded-2xl bg-[#161616] py-4 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:bg-[#ff6b35]"
+              className="w-full rounded-xl bg-gray-900 py-3 text-sm font-medium text-white transition-colors hover:bg-black"
             >
               Awesome!
             </button>

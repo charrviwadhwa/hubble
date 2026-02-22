@@ -137,9 +137,8 @@ export default function EditSociety() {
   if (initialLoad) return <div className="p-10 text-center">Loading Hub Data...</div>;
 
   return (
-    <div className="min-h-screen bg-[#f1f3f6] p-4 md:p-6 text-[#1a1a1a] font-sans">
-      <div className="mx-auto flex max-w-[1400px] gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
-        <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
+    <div className="min-h-screen bg-[#f1f3f6]  text-[#1a1a1a] font-sans">
+      <div className="mx-auto flex  gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]"><div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
            <Sidebar userRole={user?.role} />
         </div>
 
