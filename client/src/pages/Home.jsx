@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 
 import heroA from '../assets/hello2.jpg';
 import heroB from '../assets/hello3.jpg';
@@ -20,9 +20,9 @@ export default function Home() {
           <div className="flex items-center justify-between gap-4">
             <p className="text-2xl font-semibold tracking-tight">Hubble<span className="text-[#ff6b35]">.</span></p>
             <nav className="hidden items-center gap-8 text-sm md:flex">
-              <a href="#about" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">About</a>
-              <a href="#services" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Services</a>
-              <a href="#work" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Work</a>
+              <a href="#about" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Discover</a>
+              <a href="#services" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Features</a>
+              <a href="#work" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Community</a>
               <a href="#pricing" className="transition duration-300 hover:-translate-y-0.5 hover:opacity-60">Pricing</a>
             </nav>
             <div className="flex items-center gap-3">
@@ -37,14 +37,14 @@ export default function Home() {
             <div>
               <p className="mb-5 inline-flex rounded-full border border-white/30 px-4 py-1 text-xs tracking-wide text-white/80">Creative Student Platform</p>
               <h1 className="text-5xl leading-[1.02] md:text-7xl" style={headingFont}>
-                Build smart,
+                A Clearer
                 <br />
-                unforgettable
+                View of
                 <br />
-                learning brands.
+                Campus Life.
               </h1>
               <p className="mt-5 max-w-lg text-sm text-white/70 md:text-base">
-                Inspired by premium CMS landing pages, tailored for Hubble. We blend strong visual identity with conversion-focused sections.
+                Bringing your campus universe into focus. The definitive hub for real-time event tracking, society connections, and career opportunities.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link to="/signup" className="rounded-full bg-[#ff6b35] px-6 py-3 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:bg-[#ff5720]">Start project</Link>

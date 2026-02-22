@@ -11,6 +11,10 @@ export default function EventDescription() {
   const [timeLeft, setTimeLeft] = useState("");
   const [isRegistered, setIsRegistered] = useState(false);
 const [showPopup, setShowPopup] = useState(false);
+const now = new Date();
+  const deadline = data?.event?.registrationDeadline ? new Date(data.event.registrationDeadline) : null;
+  const isClosed = deadline && now > deadline;
+
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -75,7 +79,14 @@ useEffect(() => {
 }, [id]);
 
 
-const handleApply = async () => {
+const handleApply = async (e) => {
+  e.stopPropagation(); // Prevent card navigation
+    
+    if (isClosed) {
+      alert("Sorry, registration for this event has closed!");
+      return;
+    }
+
   try {
     const res = await fetch(`http://localhost:3001/api/events/${id}/register`, {
       method: 'POST',
@@ -179,17 +190,21 @@ const handleApply = async () => {
 <div className="space-y-4">
   <button 
   onClick={handleApply}
-  disabled={isRegistered || isFull}
+  disabled={isRegistered || isFull || isClosed || loading}
   className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-[11px] font-black uppercase tracking-widest transition-all ${
     isRegistered 
       ? "bg-[#059669]/10 text-[#059669] border border-[#059669]/20 cursor-default" // 🟢 Muted Emerald Theme
-      : isFull 
-      ? "bg-black/5 text-black/20 cursor-not-allowed"
+      : (isFull || isClosed)
+      ? "bg-black/5 text-black/20 cursor-not-allowed border border-black/5" 
       : "bg-[#161616] text-white hover:bg-[#ff6b35]"
   }`}
 >
-  <i className={`fi ${isRegistered ? 'fi-rr-badge-check' : 'fi-rr-rocket-lunch'} flex items-center`}></i>
-  {isRegistered ? "Applied" : isFull ? "Event Full" : "Apply Now"}
+  <i className={`fi ${
+                isRegistered ? 'fi-rr-badge-check' : 
+                (isFull || isClosed) ? 'fi-rr-lock' : 
+                'fi-rr-rocket-lunch'
+              } flex items-center`}></i>
+  {isRegistered ? "Applied" : isFull ? "Event Full" : isClosed ? "Registration Closed" : "Apply Now"}
 </button>
 </div>
 

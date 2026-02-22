@@ -2,7 +2,7 @@ import express from 'express';
 import { db } from '../db/index.js'; // Ensure the path and extension are correct
 import { societies,events,registrations,users } from '../db/schema.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { eq,sql } from 'drizzle-orm';
+import { eq,sql,and } from 'drizzle-orm';
 import multer from 'multer';
 import path from 'path';
 
@@ -126,6 +126,99 @@ router.get('/:id/stats', authenticateToken, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch hub stats" });
+  }
+});
+
+router.put('/:id', authenticateToken, (req, res, next) => {
+  // Wrap upload to handle Multer validation errors (same as create)
+  upload.single('logo')(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: `Upload error: ${err.message}` });
+      }
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
+  const societyId = parseInt(req.params.id);
+  const { 
+    name, category, description, collegeName, 
+    presidentName, insta, mail, linkedin 
+  } = req.body;
+
+  try {
+    // 1. Verify Ownership: Ensure the logged-in user owns this society
+    const [existingSociety] = await db.select()
+      .from(societies)
+      .where(and(
+        eq(societies.id, societyId),
+        eq(societies.ownerId, req.user.id) // 🔒 Security Check
+      ));
+
+    if (!existingSociety) {
+      return res.status(403).json({ error: "Unauthorized: You can only edit societies you manage." });
+    }
+
+    // 2. Prepare Update Data
+    const updateData = {
+      name,
+      category,
+      description,
+      collegeName,
+      presidentName,
+      instaLink: insta,
+      mailLink: mail,
+      linkedinLink: linkedin,
+    };
+
+    // Only update the logo if a new file was actually uploaded
+    if (req.file) {
+      updateData.logo = `/uploads/logos/${req.file.filename}`;
+    }
+
+    // 3. Perform the DB Update
+    const [updatedSociety] = await db.update(societies)
+      .set(updateData)
+      .where(eq(societies.id, societyId))
+      .returning();
+
+    res.json(updatedSociety);
+  } catch (err) {
+    console.error("Update Society Error:", err);
+    res.status(500).json({ error: "Database error: Could not update society." });
+  }
+});
+
+
+// ==========================================
+// 4. DELETE a Society (Protected - Owner Only)
+// ==========================================
+router.delete('/:id', authenticateToken, async (req, res) => {
+  const societyId = parseInt(req.params.id);
+
+  try {
+    // 1. Verify Ownership
+    const [existingSociety] = await db.select()
+      .from(societies)
+      .where(and(
+        eq(societies.id, societyId),
+        eq(societies.ownerId, req.user.id) // 🔒 Security Check
+      ));
+
+    if (!existingSociety) {
+      return res.status(403).json({ error: "Unauthorized: You can only delete societies you manage." });
+    }
+
+    // 2. Delete from Database
+    // Note: If you have foreign key constraints in your schema, 
+    // Drizzle will automatically delete related events if you set ON DELETE CASCADE.
+    await db.delete(societies).where(eq(societies.id, societyId));
+
+    res.json({ message: "Society successfully deleted." });
+  } catch (err) {
+    console.error("Delete Society Error:", err);
+    res.status(500).json({ error: "Could not delete society. Please check if there are active events tied to it." });
   }
 });
 

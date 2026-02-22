@@ -278,15 +278,25 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   const eventId = parseInt(req.params.id);
 
   try {
-    // 1. Find the event first to check ownership
-    const [event] = await db.select().from(events).where(eq(events.id, eventId));
+    // 1. Fetch Event & Society to verify full admin rights
+    const [eventData] = await db.select({
+      event: events,
+      society: societies
+    })
+    .from(events)
+    .innerJoin(societies, eq(events.societyId, societies.id))
+    .where(eq(events.id, eventId));
 
-    if (!event) {
+    if (!eventData) {
       return res.status(404).json({ message: "Event not found." });
     }
 
-    // 2. Security: Only the creator (or a super-admin) can delete it
-    if (event.createdBy !== req.user.id) {
+    // 2. Security Fix: Must be the Creator OR the Society Owner
+    // Enforcing Number() prevents string vs integer comparison bugs
+    const isCreator = Number(eventData.event.createdBy) === Number(req.user.id);
+    const isOwner = Number(eventData.society.ownerId) === Number(req.user.id);
+
+    if (!isCreator && !isOwner) {
       return res.status(403).json({ message: "Unauthorized. You can only delete your own events." });
     }
 
@@ -298,7 +308,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     res.json({ message: "Event and all its registrations have been deleted." });
   } catch (err) {
-    console.error(err);
+    console.error("Delete Event Error:", err);
     res.status(500).json({ error: "Failed to delete event." });
   }
 });
@@ -354,6 +364,76 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     console.error("Performance Error:", err);
     res.status(500).json({ error: "Database timeout" });
+  }
+});
+
+router.put('/:id', authenticateToken, (req, res, next) => {
+  uploadBanner.single('banner')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { 
+    title, eventType, location, capacity, 
+    startDate, endDate, registrationDeadline, 
+    shortDescription, longDescription 
+  } = req.body;
+
+  // 🛡️ Safe Date Parser: Handles empty strings and "null" from FormData
+  const parseDate = (d) => (d && d !== "null" && d !== "") ? new Date(d) : null;
+
+  try {
+    // 1. Fetch Event & Society to verify Admin rights
+    const [eventData] = await db.select({
+      event: events,
+      society: societies
+    })
+    .from(events)
+    .innerJoin(societies, eq(events.societyId, societies.id))
+    .where(eq(events.id, eventId));
+
+    if (!eventData) {
+      return res.status(404).json({ error: "Event not found." });
+    }
+
+    // 2. Security: Must be the Creator OR the Society Owner
+    const isCreator = Number(eventData.event.createdBy) === Number(req.user.id);
+    const isOwner = Number(eventData.society.ownerId) === Number(req.user.id);
+    
+    if (!isCreator && !isOwner) {
+      return res.status(403).json({ error: "Unauthorized: You don't manage this event." });
+    }
+
+    // 3. Safely map string data back to proper SQL types
+    const updateData = {
+      title, 
+      eventType, 
+      location, 
+      shortDescription,
+      longDescription,
+      capacity: parseInt(capacity) || 100, // Fallback to 100 if NaN
+      startDate: new Date(startDate),      // Start date is required
+      endDate: parseDate(endDate),
+      registrationDeadline: parseDate(registrationDeadline)
+    };
+    
+    // 4. Only update the banner if a new file was uploaded
+    if (req.file) {
+      updateData.banner = `/uploads/banners/${req.file.filename}`;
+    }
+
+    // 5. Perform the Drizzle Update
+    const [updatedEvent] = await db.update(events)
+      .set(updateData)
+      .where(eq(events.id, eventId))
+      .returning();
+
+    res.json(updatedEvent);
+  } catch (err) {
+    // 🔥 If it still crashes, this will print the exact reason to your backend terminal
+    console.error("🔥 PUT /api/events/:id ERROR:", err);
+    res.status(500).json({ error: "Database error. Check terminal for details." });
   }
 });
 export default router;

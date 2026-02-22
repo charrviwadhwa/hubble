@@ -1,156 +1,288 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 
-const TABS = [
-  { id: 'account', label: 'Account', icon: 'fi-rr-user' },
-  { id: 'societies', label: 'My Societies', icon: 'fi-rr-bank' },
-  { id: 'events', label: 'My Events', icon: 'fi-rr-calendar-star' }
-];
-
 export default function Settings() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [currentTab, setCurrentTab] = useState('account');
-  const [editingField, setEditingField] = useState(null); 
+  const [currentTab, setCurrentTab] = useState('Account Settings');
   const [loading, setLoading] = useState(false);
 
   // Data States
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '+91 ' });
   const [mySocieties, setMySocieties] = useState([]);
   const [organizedEvents, setOrganizedEvents] = useState([]);
+  
+  // UI States
+  const [twoFactor, setTwoFactor] = useState(true);
+  const [loginAlert, setLoginAlert] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const headers = { Authorization: `Bearer ${token}` };
       
-      // 1. User Profile
-      const userRes = await fetch('http://localhost:3001/api/users/me/profile', { headers });
-      const userData = await userRes.json();
-      setUser(userData);
-      setFormData({ name: userData.name || '', email: userData.email || '', phone: userData.phone || '' });
+      try {
+        // 1. Fetch User Profile
+        const userRes = await fetch('http://localhost:3001/api/users/me/profile', { headers });
+        const userData = await userRes.json();
+        setUser(userData);
+        setFormData({ 
+          name: userData.name || '', 
+          email: userData.email || '', 
+          phone: userData.phone || '+91 ' 
+        });
 
-      // 2. Societies you OWN
-      const socRes = await fetch('http://localhost:3001/api/societies/my', { headers });
-      const socData = await socRes.json();
-      setMySocieties(Array.isArray(socData) ? socData : []);
+        // 2. Fetch Societies you OWN
+        const socRes = await fetch('http://localhost:3001/api/societies/my', { headers });
+        const socData = await socRes.json();
+        const mySocList = Array.isArray(socData) ? socData : [];
+        setMySocieties(mySocList);
 
-      // 3. Events you CREATED
-      // We fetch all events and filter by createdBy locally for security
-      const eventRes = await fetch('http://localhost:3001/api/events', { headers });
-      const eventData = await eventRes.json();
-      const filtered = eventData.filter(e => e.createdBy === userData.id);
-      setOrganizedEvents(filtered);
+        // 3. Fetch ALL events and filter bulletproof-style
+        const eventRes = await fetch('http://localhost:3001/api/events', { headers });
+        const eventData = await eventRes.json();
+        
+        // 🔥 Get an array of IDs for the societies you own
+        const mySocietyIds = mySocList.map(soc => Number(soc.id));
+        
+        // 🔥 Filter: Show event if you made it OR if it belongs to a society you own
+        const filtered = eventData.filter(e => {
+          const matchesSociety = mySocietyIds.includes(Number(e.societyId));
+          const matchesCreator = Number(e.createdBy) === Number(userData.id);
+          return matchesSociety || matchesCreator;
+        });
+
+        // Sort them so the newest ones are at the top
+        filtered.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+        
+        setOrganizedEvents(filtered);
+      } catch (err) {
+        console.error("Data Fetch Error:", err);
+      }
     };
     fetchData();
   }, []);
 
-  const handleUpdateSociety = async (id, updatedData) => {
-    // Logic to call PUT /api/societies/:id
-    console.log("Updating Society:", id, updatedData);
-    setEditingField(null);
+  const handleSaveAccount = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:3001/api/users/me/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ name: formData.name, phone: formData.phone }),
+      });
+      if (res.ok) alert("Account settings saved successfully!");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const tabs = ['Account Settings', 'My Societies', 'My Events'];
+
   return (
-    <div className="min-h-screen bg-[#f3efe8] p-4 md:p-6 text-[#1a1a1a]">
-      <div className="mx-auto max-w-[1380px] rounded-[28px] border border-black/10 bg-[#f7f3ec] p-3 shadow-lg md:p-4">
-        <div className="flex flex-col gap-4 lg:flex-row">
-          <Sidebar userRole={user?.role} />
+    <div className="min-h-screen bg-[#f1f3f6] p-4 md:p-6 text-[#1a1a1a] font-sans">
+      <div className="mx-auto flex max-w-[1400px] gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
+        
+        <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
+           <Sidebar userRole={user?.role} />
+        </div>
 
-          <main className="flex-1 rounded-2xl bg-[#f9f6ef] p-6 md:p-10 overflow-y-auto">
-            <header className="mb-10 flex items-center justify-between">
-              <h1 className="text-4xl font-black tracking-tight">Settings</h1>
-              <button className="rounded-2xl bg-[#ff6b35] px-8 py-3 text-xs font-black uppercase text-white shadow-lg shadow-[#ff6b35]/20">
-                Save All
+        <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
+          
+          <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pr-6">
+            <h1 className="text-3xl font-medium text-gray-900">Settings</h1>
+            {currentTab === 'Account Settings' && (
+              <button 
+                onClick={handleSaveAccount}
+                disabled={loading}
+                className="rounded-full bg-[#ff6b35] px-6 py-2.5 text-sm font-medium text-white shadow-md hover:bg-[#e85a25] transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
               </button>
-            </header>
+            )}
+          </header>
 
-            <div className="mb-10 flex gap-8 border-b border-black/5">
-              {TABS.map(tab => (
+          <div className="mb-10 border-b border-gray-200">
+            <div className="flex gap-8 overflow-x-auto">
+              {tabs.map(tab => (
                 <button
-                  key={tab.id}
-                  onClick={() => { setCurrentTab(tab.id); setEditingField(null); }}
-                  className={`flex items-center gap-2 pb-4 text-[11px] font-black uppercase tracking-widest transition-all ${
-                    currentTab === tab.id ? "border-b-2 border-[#ff6b35] text-[#ff6b35]" : "text-black/30"
+                  key={tab}
+                  onClick={() => setCurrentTab(tab)}
+                  className={`relative pb-4 text-sm font-medium transition-colors ${
+                    currentTab === tab 
+                      ? "text-[#ff6b35]" 
+                      : "text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  <i className={`fi ${tab.icon}`}></i> {tab.label}
+                  <span className="flex items-center gap-2">
+                    {tab === 'Account Settings' && <i className="fi fi-rr-user text-lg"></i>}
+                    {tab === 'My Societies' && <i className="fi fi-rr-bank text-lg"></i>}
+                    {tab === 'My Events' && <i className="fi fi-rr-calendar-star text-lg"></i>}
+                    {tab}
+                  </span>
+                  {currentTab === tab && (
+                    <div className="absolute bottom-0 left-0 h-[2px] w-full bg-[#ff6b35]" />
+                  )}
                 </button>
               ))}
             </div>
+          </div>
 
-            <div className="max-w-3xl space-y-6">
-              {/* --- ACCOUNT TAB --- */}
-              {currentTab === 'account' && (
-                <EditableRow 
-                  label="Full Name" 
-                  value={formData.name} 
-                  isEditing={editingField === 'account_name'}
-                  onEdit={() => setEditingField(editingField === 'account_name' ? null : 'account_name')}
-                  onChange={(val) => setFormData({...formData, name: val})}
-                />
-              )}
+          <div className="max-w-3xl pr-6 pb-20">
+            
+            {/* =========================================
+                ACCOUNT SETTINGS TAB
+            ========================================= */}
+            {currentTab === 'Account Settings' && (
+              <div className="space-y-10 animate-in fade-in duration-500">
+                <section>
+                  <h3 className="text-base font-semibold text-gray-900 mb-1">Profile Information</h3>
+                  <p className="text-sm text-gray-500 mb-8">Manage your personal details and keep your contact info up to date.</p>
+                  
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+                      <label className="text-sm text-gray-700">Profile Picture</label>
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold overflow-hidden">
+                           {user?.name ? user.name[0].toUpperCase() : 'U'}
+                        </div>
+                        <button className="text-sm text-gray-500 hover:text-gray-800">Delete</button>
+                        <button className="text-sm text-[#ff6b35] hover:text-[#e85a25] font-medium">Update</button>
+                      </div>
+                    </div>
 
-              {/* --- SOCIETIES TAB --- */}
-              {currentTab === 'societies' && (
-                <div className="space-y-4">
-                  {mySocieties.map(soc => (
-                    <EditableRow 
-                      key={soc.id}
-                      label={`Society Name: ${soc.name}`}
-                      value={soc.description}
-                      isEditing={editingField === `soc_${soc.id}`}
-                      onEdit={() => setEditingField(editingField === `soc_${soc.id}` ? null : `soc_${soc.id}`)}
-                      onChange={(val) => handleUpdateSociety(soc.id, { description: val })}
-                      placeholder="Edit society description..."
-                    />
-                  ))}
+                    <BoutiqInput label="Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                    <BoutiqInput label="Email" value={formData.email} readOnly={true} />
+                    <BoutiqInput label="Phone Number" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                  </div>
+                </section>
+
+                <hr className="border-gray-200" />
+
+                <section>
+                  <h3 className="text-base font-semibold text-gray-900 mb-1">Security</h3>
+                  <p className="text-sm text-gray-500 mb-8">Keep your account secure with extra authentication and alerts.</p>
+                  <div className="space-y-6">
+                    <ToggleRow label="Two-Factor Authentication" description="Add an extra layer of protection to your account." isOn={twoFactor} onToggle={() => setTwoFactor(!twoFactor)} />
+                    <ToggleRow label="Login Alert Notification" description="Get notified when your account is accessed from a new device." isOn={loginAlert} onToggle={() => setLoginAlert(!loginAlert)} />
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* =========================================
+                MY SOCIETIES TAB
+            ========================================= */}
+            {currentTab === 'My Societies' && (
+              <div className="space-y-6 animate-in fade-in duration-500">
+                <h3 className="text-base font-semibold text-gray-900 mb-1">Manage Societies</h3>
+                <p className="text-sm text-gray-500 mb-6">Select a society to edit its details, roster, and settings.</p>
+
+                <div className="grid gap-3">
+                  {mySocieties.length > 0 ? mySocieties.map(soc => (
+                    <div 
+                      key={soc.id} 
+                      onClick={() => navigate(`/settings/societies/${soc.id}`)}
+                      className="group flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-[#ff6b35] hover:shadow-sm transition-all cursor-pointer bg-white"
+                    >
+                      <div className="flex items-center gap-4">
+                        <img src={`http://localhost:3001${soc.logo}`} alt="" className="h-10 w-10 rounded-lg object-cover bg-gray-50" />
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900">{soc.name}</h4>
+                          <p className="text-xs text-gray-500">{soc.category}</p>
+                        </div>
+                      </div>
+                      <div className="text-[#ff6b35] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-sm font-medium">
+                        Edit <i className="fi fi-rr-arrow-right"></i>
+                      </div>
+                    </div>
+                  )) : <p className="text-sm text-gray-500 italic">You don't manage any societies yet.</p>}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* --- EVENTS TAB --- */}
-              {currentTab === 'events' && (
-                <div className="space-y-4">
-                  {organizedEvents.map(event => (
-                    <EditableRow 
-                      key={event.id}
-                      label={`Event Title: ${event.title}`}
-                      value={event.location}
-                      isEditing={editingField === `evt_${event.id}`}
-                      onEdit={() => setEditingField(editingField === `evt_${event.id}` ? null : `evt_${event.id}`)}
-                      onChange={(val) => console.log("Edit Event Location", event.id, val)}
-                      placeholder="Edit event location..."
-                    />
-                  ))}
+            {/* =========================================
+                MY EVENTS TAB
+            ========================================= */}
+            {currentTab === 'My Events' && (
+              <div className="space-y-6 animate-in fade-in duration-500">
+                <h3 className="text-base font-semibold text-gray-900 mb-1">Manage Events</h3>
+                <p className="text-sm text-gray-500 mb-6">Select any event linked to your account or societies to edit its details.</p>
+
+                <div className="grid gap-3">
+                  {organizedEvents.length > 0 ? organizedEvents.map(event => {
+                    const isPast = new Date(event.startDate) < new Date();
+                    return (
+                    <div 
+                      key={event.id} 
+                      onClick={() => navigate(`/settings/events/${event.id}`)}
+                      className={`group flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-[#ff6b35] hover:shadow-sm transition-all cursor-pointer bg-white ${isPast ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="text-sm font-semibold text-gray-900">{event.title}</h4>
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${isPast ? 'bg-gray-100 text-gray-500' : 'bg-[#ff6b35]/10 text-[#ff6b35]'}`}>
+                            {isPast ? 'Past' : 'Upcoming'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {new Date(event.startDate).toLocaleDateString()} • {event.location}
+                        </p>
+                      </div>
+                      <div className="text-[#ff6b35] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-sm font-medium">
+                        Edit <i className="fi fi-rr-arrow-right"></i>
+                      </div>
+                    </div>
+                  )}) : <p className="text-sm text-gray-500 italic">You haven't created any events yet.</p>}
                 </div>
-              )}
-            </div>
-          </main>
-        </div>
+              </div>
+            )}
+
+          </div>
+        </main>
       </div>
     </div>
   );
 }
 
-function EditableRow({ label, value, isEditing, onEdit, onChange, placeholder }) {
+function BoutiqInput({ label, value, onChange, readOnly = false }) {
   return (
-    <div className={`flex flex-col gap-4 p-5 rounded-2xl border transition-all ${isEditing ? 'bg-white border-[#ff6b35]/40 shadow-xl' : 'bg-transparent border-black/5'}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-[10px] font-black uppercase text-black/20 tracking-widest mb-1">{label}</p>
-          {!isEditing && <p className="text-sm font-bold text-[#1a1a1a]">{value || "No data provided"}</p>}
-        </div>
-        <button onClick={onEdit} className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all ${isEditing ? 'bg-[#ff6b35] text-white rotate-90' : 'bg-[#f7f3ec] text-black/40 hover:text-[#ff6b35]'}`}>
-          <i className={`fi ${isEditing ? 'fi-rr-cross-small' : 'fi-rr-pencil'} text-lg`}></i>
+    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+      <label className="text-sm text-gray-700">{label}</label>
+      <input 
+        type="text" 
+        value={value} 
+        onChange={onChange}
+        readOnly={readOnly}
+        className={`w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors ${
+          readOnly ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]'
+        }`}
+      />
+    </div>
+  );
+}
+
+function ToggleRow({ label, description, isOn, onToggle }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start gap-4">
+      <label className="text-sm text-gray-700 pt-1">{label}</label>
+      <div>
+        <button 
+          onClick={onToggle}
+          className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${isOn ? 'bg-[#ff6b35]' : 'bg-gray-300'}`}
+        >
+          <div className={`absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform duration-300 ${isOn ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
+        <p className="text-xs text-gray-500 mt-2">{description}</p>
       </div>
-      {isEditing && (
-        <input 
-          autoFocus
-          className="w-full rounded-xl border border-black/10 bg-[#f7f3ec]/50 p-4 text-sm font-semibold outline-none focus:border-[#ff6b35]"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-        />
-      )}
     </div>
   );
 }

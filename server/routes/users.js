@@ -7,15 +7,14 @@ import { eq,sql } from 'drizzle-orm';
 const router = express.Router();
 
 // 1. Get Profile (Protected)
-// backend/routes/users.js
 router.get('/me/profile', authenticateToken, async (req, res) => {
   try {
-    // Explicitly select the email column
+    
     const [user] = await db
       .select({
         id: users.id,
         name: users.name,
-        email: users.email, // ⬅️ Ensure this is here!
+        email: users.email, 
         role: users.role,
         phone: users.phone
       })
