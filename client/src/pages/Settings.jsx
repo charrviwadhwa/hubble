@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/TopBar';
+import { triggerHubbleNotif } from '../utils/notify'; // Import the notification utility
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -78,7 +79,13 @@ export default function Settings() {
         },
         body: JSON.stringify({ name: formData.name, phone: formData.phone }),
       });
-      if (res.ok) alert("Account settings saved successfully!");
+      if (res.ok) {
+        alert("Account settings saved successfully!");
+        triggerHubbleNotif(
+    "System Synchronized", 
+    "Your account parameters have been updated successfully."
+  );
+}
     } catch (err) {
       console.error(err);
     } finally {

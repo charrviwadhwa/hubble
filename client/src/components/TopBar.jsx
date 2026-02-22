@@ -1,64 +1,113 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
+// The trigger function can be imported from your utils or defined here for safety
+const triggerHubbleNotif = (title, message) => {
+  const saved = JSON.parse(localStorage.getItem('hubble_notifs') || '[]');
+  const newEntry = {
+    id: Date.now(),
+    title,
+    message,
+    read: false,
+    timestamp: new Date().toISOString()
+  };
+  localStorage.setItem('hubble_notifs', JSON.stringify([newEntry, ...saved]));
+  window.dispatchEvent(new Event('hubble_update')); 
+};
 
 export default function TopBar({ user }) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
-  // Fallback data if user hasn't loaded yet
-  const userName = user?.name || 'MSIT Student';
-  const userEmail = user?.email || 'student@msit.in';
-  const initials = userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  // Sync notifications from localStorage
+  const syncNotifs = () => {
+    const saved = JSON.parse(localStorage.getItem('hubble_notifs') || '[]');
+    setNotifications(saved);
+  };
+
+  useEffect(() => {
+    syncNotifs();
+    window.addEventListener('hubble_update', syncNotifs);
+    window.addEventListener('storage', syncNotifs);
+    return () => {
+      window.removeEventListener('hubble_update', syncNotifs);
+      window.removeEventListener('storage', syncNotifs);
+    };
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAllRead = () => {
+    const updated = notifications.map(n => ({ ...n, read: true }));
+    localStorage.setItem('hubble_notifs', JSON.stringify(updated));
+    setNotifications(updated);
+  };
 
   return (
-    <nav className="mb-8 flex flex-col-reverse gap-4 md:flex-row md:items-center justify-between">
+    <div className="relative mb-8 flex items-center justify-end gap-4 pr-6">
       
-      {/* 🔍 Left: Search Bar */}
-      <div className="relative w-full max-w-md">
-        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-[2] stroke-currentColor">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" strokeLinecap="round" />
-          </svg>
+      {/* 1. Notification System */}
+      <div className="relative">
+        <button 
+          onClick={() => setShowNotifications(!showNotifications)}
+          className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all shadow-sm ${
+            showNotifications ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-100'
+          }`}
+        >
+          <i className={`fi fi-rr-bell mt-1 text-lg ${unreadCount > 0 ? 'text-[#ff6b35]' : 'text-gray-400'}`}></i>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff6b35] text-[10px] font-bold text-white border-2 border-white">
+              {unreadCount}
+            </span>
+          )}
+        </button>
+
+        {/* Dropdown Menu */}
+        {showNotifications && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
+            <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-100 bg-white shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Inbox</h3>
+                {unreadCount > 0 && (
+                  <button onClick={markAllRead} className="text-[10px] font-bold text-[#ff6b35] hover:underline">
+                    Mark Read
+                  </button>
+                )}
+              </div>
+              
+              <div className="max-h-[300px] overflow-y-auto">
+                {notifications.length > 0 ? (
+                  notifications.map(n => (
+                    <div key={n.id} className={`p-4 border-b border-gray-50 last:border-0 transition-colors ${!n.read ? 'bg-orange-50/20' : 'opacity-60'}`}>
+                      <p className="text-xs font-bold text-gray-900">{n.title}</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">{n.message}</p>
+                      <p className="text-[9px] text-gray-400 mt-2 font-mono">
+                        {new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-10 text-center">
+                    <i className="fi fi-rr-envelope-open text-2xl text-gray-200"></i>
+                    <p className="text-xs text-gray-400 mt-2 italic">No new missions.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* 2. User Profile Group */}
+      <div className="flex items-center gap-3 pl-4 border-l border-gray-100">
+        <div className="text-right hidden sm:block">
+          <p className="text-xs font-bold text-gray-900">{user?.name || 'Hubble User'}</p>
+          <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">{user?.role || 'Member'}</p>
         </div>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search anything ..."
-          className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]"
-        />
+        <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center font-bold text-[#ff6b35] shadow-sm">
+          {user?.name?.[0] || 'H'}
+        </div>
       </div>
-
-      {/* 👤 Right: Actions & Profile */}
-      <div className="flex items-center justify-end gap-4 md:gap-3">
-        
-        {/* Action Icons (Bell & Envelope in circular borders) */}
-        <button className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900">
-          <i className="fi fi-rr-bell text-sm flex items-center mt-0.5"></i>
-        </button>
-        <button className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900">
-          <i className="fi fi-rr-envelope text-sm flex items-center mt-0.5"></i>
-        </button>
-
-        {/* Vertical Divider */}
-        <div className="hidden h-8 w-px bg-gray-200 md:block"></div>
-
-        {/* User Profile Dropdown Trigger */}
-        <button className="flex items-center gap-3 text-left transition-opacity hover:opacity-80">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-800 to-black text-xs font-bold text-white shadow-sm overflow-hidden">
-            {/* If you have a user profile picture, put the <img src={user.avatar} /> here instead */}
-            {initials}
-          </div>
-          <div className="hidden flex-col md:flex">
-            <span className="text-sm font-semibold text-gray-900 leading-tight">{userName}</span>
-            <span className="text-xs font-medium text-gray-500">{userEmail}</span>
-          </div>
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-[2] stroke-gray-400 hidden md:block ml-1">
-            <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-
-      </div>
-    </nav>
+    </div>
   );
 }

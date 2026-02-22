@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar'; // Integrates the navigation bar
+import { triggerHubbleNotif } from '../utils/notify'; // Import the notification utility
 
 const CATEGORIES = ["Technical", "Cultural", "Sports", "Literary", "Entrepreneurship", "Social Service", "Other"];
 const EVENT_TYPES = ["Workshop", "Seminar", "Hackathon", "Competition", "Cultural Fest", "Sports Event", "Other"];
@@ -88,6 +89,10 @@ export default function CreateEvent() {
       const resData = await res.json();
 
       if (res.ok) {
+        triggerHubbleNotif(
+    "Mission Broadcasted", 
+    "Your event is now live and visible to the entire MSIT student body."
+  );
         navigate('/events'); // Redirect to Events feed on success
       } else {
         setError(resData.error || resData.message || "Failed to create event.");

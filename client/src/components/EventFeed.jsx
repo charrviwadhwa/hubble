@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { triggerHubbleNotif } from '../utils/notify';
 
 export default function EventCard({ event, onRefresh, isRegistered = false }) {
   const navigate = useNavigate();
@@ -43,6 +44,11 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
         });
         setShowPopup(true);
         if (onRefresh) onRefresh(); 
+
+        triggerHubbleNotif(
+      "Mission Confirmed!", 
+      `You have successfully registered for ${event.title}.`
+    );
       } else {
         const data = await res.json();
         alert(data.message);
@@ -52,6 +58,7 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
     } finally {
       setLoading(false);
     }
+    
   };
 
   const dateLabel = event.startDate 

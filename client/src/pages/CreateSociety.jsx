@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar'; // Integrates the navigation bar
-
+import { triggerHubbleNotif } from '../utils/notify'; 
 const CATEGORIES = ["Technical", "Cultural", "Sports", "Literary", "Entrepreneurship", "Social Service", "Other"];
 
 export default function CreateSociety() {
@@ -87,6 +87,11 @@ export default function CreateSociety() {
       });
 
       if (res.ok) {
+        triggerHubbleNotif(
+      "Hub Activated", 
+      "Your society has been registered successfully! Start hosting events now."
+    );
+    
         navigate('/my-societies');
       } else {
         const errorData = await res.json();
