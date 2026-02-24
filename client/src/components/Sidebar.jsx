@@ -1,8 +1,9 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 // 1. Helper component for SVGs
 function Icon({ type }) {
-  const common = 'h-5 w-5 stroke-[2]'; // Thickened the strokes slightly to match the bolder aesthetic
+  const common = 'h-5 w-5 stroke-[2]'; 
 
   if (type === 'grid') {
     return <svg viewBox="0 0 24 24" fill="none" className={common}><rect x="4" y="4" width="6" height="6" stroke="currentColor" rx="1" /><rect x="14" y="4" width="6" height="6" stroke="currentColor" rx="1" /><rect x="4" y="14" width="6" height="6" stroke="currentColor" rx="1" /><rect x="14" y="14" width="6" height="6" stroke="currentColor" rx="1" /></svg>;
@@ -19,6 +20,9 @@ function Icon({ type }) {
   if (type === 'settings') {
     return <svg viewBox="0 0 24 24" fill="none" className={common}><circle cx="12" cy="12" r="3" stroke="currentColor" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" /></svg>;
   }
+  if (type === 'attendance') {
+    return <svg viewBox="0 0 24 24" fill="none" className={common}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeLinejoin="round" strokeLinecap="round"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeLinejoin="round" strokeLinecap="round"/></svg>;
+  }
 
   return <svg viewBox="0 0 24 24" fill="none" className={common}><path d="m12 4 2.4 4.8 5.3.8-3.8 3.8.9 5.3L12 16.2l-4.8 2.5.9-5.3-3.8-3.8 5.3-.8L12 4Z" stroke="currentColor" strokeLinejoin="round" /></svg>;
 }
@@ -33,13 +37,41 @@ const menuItems = [
 
 export default function Sidebar({ userRole }) {
   const location = useLocation();
+  const [isOrganizer, setIsOrganizer] = useState(false);
+
+  useEffect(() => {
+    // 🛡️ Check if the user is a manager of any society (NOT events)
+    const checkManagerStatus = async () => {
+      try {
+        // Change this URL to check for societies, or a specific user-role endpoint
+        const res = await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        
+        // If your profile API returns the societies they manage, check that!
+        // Alternatively, if you have an endpoint like /api/societies/my:
+        const socRes = await fetch('https://hubble-d9l6.onrender.com/api/societies/my', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        const socData = await socRes.json();
+
+        if (Array.isArray(socData) && socData.length > 0) {
+          setIsOrganizer(true);
+        }
+      } catch (err) {
+        console.error("Failed to check organizer status", err);
+      }
+    };
+
+    checkManagerStatus();
+  }, []);
 
   return (
     <aside className="w-full lg:w-64 flex flex-col h-full min-h-[calc(100vh-2rem)] bg-transparent pt-2">
       
-      {/* 🟠 THE NEW HUBBLE BRAND HEADER (Matches Landing Page) */}
+      {/* 🟠 THE NEW HUBBLE BRAND HEADER */}
       <div className="mb-12 flex items-center gap-2 px-6 pt-4">
-        {/* Soft pulse animation inline */}
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes pulse-soft {
             0%, 100% { transform: scale(1); opacity: 1; }
@@ -61,7 +93,6 @@ export default function Sidebar({ userRole }) {
               to={item.to}
               className="flex items-center gap-4 rounded-xl px-3 py-3 transition-colors group"
             >
-              {/* Icon Container - Active State */}
               <div 
                 className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
                   isActive 
@@ -72,7 +103,6 @@ export default function Sidebar({ userRole }) {
                 <Icon type={item.icon} />
               </div>
               
-              {/* Label - Bolder font weights to match landing page aesthetic */}
               <span 
                 className={`text-[15px] tracking-wide transition-colors ${
                   isActive 
@@ -85,15 +115,51 @@ export default function Sidebar({ userRole }) {
             </Link>
           );
         })}
+
+        {/* 🛡️ NEW ORGANIZER TOOLS SECTION */}
+        {(userRole === 'admin' || isOrganizer) && (
+          <div className="pt-6 pb-2">
+            <p className="px-5 mb-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
+              Organizer Tools
+            </p>
+            
+            <Link
+              to="/organizer/attendance"
+              className="flex items-center gap-4 rounded-xl px-3 py-3 transition-colors group"
+            >
+              <div 
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
+                  location.pathname.includes('/organizer/attendance') || location.pathname.includes('/manage-event')
+                    ? 'bg-[#ff6b35] text-white shadow-md shadow-[#ff6b35]/30' 
+                    : 'bg-transparent text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-900'
+                }`}
+              >
+                <Icon type="attendance" />
+              </div>
+              
+              <span 
+                className={`text-[15px] tracking-wide transition-colors ${
+                  location.pathname.includes('/organizer/attendance') || location.pathname.includes('/manage-event')
+                    ? 'font-black text-black' 
+                    : 'font-bold text-gray-500 group-hover:text-black'
+                }`}
+              >
+                Check-in Desk
+              </span>
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* 🚪 Bottom Section (Role & Sign Out) */}
       <div className="mt-auto px-6 pb-6 pt-10">
         
-        {/* Role Badge */}
+        {/* Role Badge - Updates dynamically if they are an organizer */}
         <div className="mb-6 rounded-2xl bg-gray-50 p-4 border border-gray-200 text-center">
           <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Current Role</p>
-          <p className="text-sm font-bold text-black capitalize">{userRole || 'Member'}</p>
+          <p className="text-sm font-bold text-black capitalize">
+            {(userRole === 'admin' || isOrganizer) ? 'Society Manager' : (userRole || 'Member')}
+          </p>
         </div>
         
         {/* Sign Out Button */}

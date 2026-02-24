@@ -1,185 +1,289 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import TopBar from '../components/TopBar'; 
+import TopBar from '../components/TopBar';
 
 export default function Profile() {
-  const [userData, setUserData] = useState(null);
+  const [user, setUser] = useState(null);
+  const [stats, setStats] = useState({ totalRegistered: 0, attended: 0, upcoming: 0 });
+  const [pastEvents, setPastEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // 🟢 Modal State
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '', branch: '', year: '', github: '', linkedin: '', leetcode: '', codechef: ''
+  });
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/users/me/profile', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-    })
-    .then(res => res.json())
-    .then(data => {
-      setUserData(data);
-    })
-    .catch(err => {
-      console.error("Profile Fetch Error:", err);
-    });
+    const fetchProfileData = async () => {
+      try {
+        const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+
+        // 1. Fetch Real User Profile
+        // (Ensure this matches your actual profile route)
+        const userRes = await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers });
+        const userData = await userRes.json();
+        
+        setUser(userData);
+        setFormData({
+          name: userData.name || '',
+          branch: userData.branch || '',
+          year: userData.year || '',
+          github: userData.github || '',
+          linkedin: userData.linkedin || '',
+          leetcode: userData.leetcode || '',
+          codechef: userData.codechef || ''
+        });
+
+        // 2. Fetch Real Registrations & Calculate Stats
+        const regRes = await fetch('https://hubble-d9l6.onrender.com/api/events/my-registrations', { headers });
+        const regData = await regRes.json();
+
+        if (Array.isArray(regData)) {
+          const now = new Date();
+          
+          // 🧮 The Math
+          const total = regData.length;
+          const attendedCount = regData.filter(event => event.attended).length;
+          const upcomingCount = regData.filter(event => new Date(event.startDate) > now).length;
+
+          setStats({
+            totalRegistered: total,
+            attended: attendedCount,
+            upcoming: upcomingCount
+          });
+
+          // Show past events (things that have already happened)
+          const history = regData.filter(event => new Date(event.startDate) <= now);
+          setPastEvents(history);
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load profile data", err);
+        setLoading(false);
+      }
+    };
+
+    fetchProfileData();
   }, []);
 
-  const initials = userData?.name 
-    ? userData.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() 
-    : 'U'; // Fallback to 'U' instead of 'HB'
+  // 🟢 Handle Save Function
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    
+    // Optimistic UI Update (Instantly updates the screen)
+    setUser({ ...user, ...formData });
+    setIsEditing(false);
 
-  const xp = userData?.xp || 0;
-  const xpPercentage = Math.min((xp / 8000) * 100, 100);
+    // 🔗 TODO: Send `formData` to your backend using a PATCH request here!
+    /*
+    await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      body: JSON.stringify(formData)
+    });
+    */
+  };
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  if (loading) return <div className="min-h-screen bg-[#f1f3f6] flex items-center justify-center font-bold text-[#ff6b35]">Loading Profile...</div>;
 
   return (
-    <div className="min-h-screen bg-[#f1f3f6] text-[#1a1a1a] font-sans">
+    <div className="min-h-screen bg-[#f1f3f6] font-sans relative">
       <div className="mx-auto flex gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
         
-        {/* Sidebar Container */}
         <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
-           <Sidebar userRole={userData?.role} />
+           <Sidebar userRole={user?.role} />
         </div>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
-          
-          <TopBar user={userData} />
+        <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8 pr-6 pb-20">
+          <TopBar user={user} />
 
-          <header className="mb-8 pr-6">
-            <h1 className="text-3xl font-medium text-gray-900">Student Profile</h1>
-            <p className="text-sm text-gray-500 mt-1">View your journey, achievements, and statistics.</p>
+          <header className="mb-8 mt-4 flex justify-between items-end">
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">My Profile</h1>
+              <p className="text-sm text-gray-500 mt-1 font-medium">Manage your campus identity and view your activity.</p>
+            </div>
           </header>
 
-          <div className="max-w-4xl pr-6 pb-20 space-y-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* 1. Profile Identity Section */}
-            <section className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-              <div className="flex items-center gap-6">
+            {/* LEFT COLUMN: THE ID CARD */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="bg-white rounded-3xl border border-gray-200 p-8 text-center shadow-sm relative overflow-hidden group">
                 
-                {/* Avatar */}
-                <div className="relative">
-                  <div className="h-24 w-24 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center text-3xl font-bold text-[#ff6b35] overflow-hidden animate-in fade-in zoom-in duration-300">
-                    {userData?.profilePic ? (
-                      <img src={userData.profilePic} alt="Profile" className="h-full w-full object-cover" />
-                    ) : initials}
-                  </div>
-                  {userData?.isOrganizer && (
-                    <div className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[#ff6b35] text-white">
-                      <i className="fi fi-rr-crown text-[10px] mt-0.5"></i>
-                    </div>
-                  )}
-                </div>
+                {/* 🟢 EDIT BUTTON */}
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-orange-50 text-[#ff6b35] hover:bg-[#ff6b35] hover:text-white flex items-center justify-center transition-colors z-10"
+                  title="Edit Profile"
+                >
+                  <i className="fi fi-rr-pencil text-xs mt-0.5"></i>
+                </button>
 
-                {/* Identity Info */}
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">
-                    {userData?.name || 'User Name'}
-                  </h2>
-                  <p className="text-sm text-gray-500 font-medium mb-3">IT Student | 3rd Year</p>
-                  
-                  {/* XP Progress Bar */}
-                  <div className="w-full max-w-xs">
-                    <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1.5">
-                      <span>Hubble Rank</span>
-                      <span>{xp} / 8000 XP</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-[#ff6b35] rounded-full transition-all duration-1000 ease-out" 
-                        style={{ width: `${xpPercentage}%` }}
-                      ></div>
-                    </div>
+                <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-orange-50 to-orange-100/50 -z-10"></div>
+
+                <div className="relative mx-auto w-28 h-28 mb-4 mt-2">
+                  <div className="w-full h-full rounded-full bg-gray-900 text-white flex items-center justify-center text-4xl font-black shadow-xl ring-4 ring-white">
+                    {user?.name?.charAt(0)}
                   </div>
                 </div>
-              </div>
 
-              {/* Quick Stats Grid */}
-              <div className="flex gap-4 w-full md:w-auto">
-                <QuickStat label="Events Joined" value={userData?.totalRegistrations || 0} icon="fi-rr-calendar-star" />
-                <QuickStat label="Check-ins" value={userData?.totalAttended || 0} icon="fi-rr-marker" />
-              </div>
-            </section>
+                <h2 className="text-xl font-black text-gray-900">{user?.name}</h2>
+                <p className="text-sm font-mono text-gray-500 mb-4">{user?.email}</p>
+                
+                <span className="inline-block bg-orange-50 text-[#ff6b35] border border-orange-100 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg mb-6">
+                  {user?.role || "Student"}
+                </span>
 
-            {/* 2. Grid Layout for Achievements & Inventory */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              
-              {/* Achievements Section */}
-              <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col">
-                <div className="flex justify-between items-center mb-6">
+                <div className="bg-gray-50 rounded-2xl p-4 text-left space-y-3 border border-gray-100 mb-6">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900">Achievements</h3>
-                    <p className="text-xs text-gray-500 mt-1">Badges earned through participation.</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Branch</p>
+                    <p className="text-sm font-bold text-gray-900">{user?.branch || "Not set"}</p>
                   </div>
-                  <span className="text-xs font-semibold text-[#ff6b35] bg-[#ff6b35]/10 px-3 py-1 rounded-full">
-                    {userData?.badges?.length || 0}/10 Unlocked
-                  </span>
-                </div>
-                
-                <div className="flex justify-around py-4 flex-1">
-                  <Badge icon="fi-rr-leaf" title="Pioneer" unlocked={userData?.totalRegistrations >= 1} />
-                  <Badge icon="fi-rr-shield-check" title="Active" unlocked={userData?.totalRegistrations >= 5} />
-                  <Badge icon="fi-rr-star" title="Leader" unlocked={userData?.isOrganizer} />
-                </div>
-                
-                <button className="mt-6 w-full text-sm font-medium text-[#ff6b35] hover:text-[#e85a25] transition-colors py-2 border-t border-gray-100">
-                  View all achievements →
-                </button>
-              </section>
-
-              {/* Inventory Section */}
-              <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col">
-                <div className="mb-6">
-                  <h3 className="text-base font-semibold text-gray-900">Inventory</h3>
-                  <p className="text-xs text-gray-500 mt-1">Tickets, passes, and digital assets.</p>
-                </div>
-                
-                <div className="flex gap-4 flex-wrap flex-1 content-start">
-                  <InventoryItem icon="fi-rr-ticket" color="text-blue-600 bg-blue-50 border-blue-100" />
-                  <InventoryItem icon="fi-rr-bolt" color="text-amber-600 bg-amber-50 border-amber-100" />
-                  <InventoryItem icon="fi-rr-palette" color="text-purple-600 bg-purple-50 border-purple-100" />
-                  <div className="h-12 w-12 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 hover:border-gray-300 hover:text-gray-500 transition-colors cursor-pointer">
-                    <i className="fi fi-rr-plus text-sm mt-0.5"></i>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Year</p>
+                    <p className="text-sm font-bold text-gray-900">{user?.year || "Not set"}</p>
                   </div>
                 </div>
-                
-                <button className="mt-6 w-full text-sm font-medium text-[#ff6b35] hover:text-[#e85a25] transition-colors py-2 border-t border-gray-100">
-                  Manage inventory →
-                </button>
-              </section>
 
+                {/* Social Links Row */}
+                <div className="flex flex-wrap justify-center gap-3">
+                  {user?.github && (
+                    <a href={user.github} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-900 hover:text-white transition-all border border-gray-200">
+                      <i className="fi fi-brands-github text-lg mt-1"></i>
+                    </a>
+                  )}
+                  {user?.linkedin && (
+                    <a href={user.linkedin} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition-all border border-blue-100">
+                      <i className="fi fi-brands-linkedin text-lg mt-1"></i>
+                    </a>
+                  )}
+                  
+                </div>
+              </div>
             </div>
+
+            {/* RIGHT COLUMN: THE DASHBOARD */}
+            {/* Past Attended Events List */}
+<div className="space-y-4">
+  {pastEvents.map((event) => (
+    <div key={event.id} className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50/50 border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
+      <div className="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-400 group-hover:text-[#ff6b35] group-hover:border-[#ff6b35] transition-colors">
+        <i className={`fi ${event.eventType?.toLowerCase() === 'hackathon' ? 'fi-rr-rocket-lunch' : 'fi-rr-presentation'} text-lg mt-1`}></i>
+      </div>
+      <div className="flex-1">
+        <h4 className="text-sm font-bold text-gray-900">{event.title}</h4>
+        <p className="text-xs font-medium text-gray-500 mt-0.5">{event.eventType || "Event"}</p>
+      </div>
+      <div className="text-right">
+        {event.attended ? (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-100">
+            <i className="fi fi-rr-check text-[8px]"></i> Attended
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-wider border border-gray-200">
+            Absent
+          </span>
+        )}
+        <p className="text-[11px] font-bold text-gray-400 mt-1.5">
+          {new Date(event.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </p>
+      </div>
+    </div>
+  ))}
+  
+  {pastEvents.length === 0 && (
+    <div className="py-10 text-center text-gray-400">
+      <i className="fi fi-rr-ghost text-3xl mb-3 block opacity-50"></i>
+      <p className="text-sm font-medium">No event history yet. Time to explore!</p>
+    </div>
+  )}
+</div>
+
           </div>
         </main>
       </div>
-    </div>
-  );
-}
 
-/* --- BOUTIQ-STYLE HELPER COMPONENTS --- */
+      {/* 🟢 EDIT PROFILE MODAL */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h3 className="font-black text-lg text-gray-900">Edit Profile</h3>
+              <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-700 transition-colors">
+                <i className="fi fi-rr-cross"></i>
+              </button>
+            </div>
 
-function QuickStat({ label, value, icon }) {
-  return (
-    <div className="flex-1 md:flex-none flex items-center gap-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 min-w-[140px]">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-gray-200 text-gray-600 shadow-sm">
-        <i className={`fi ${icon} text-lg mt-1`}></i>
-      </div>
-      <div>
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-        <p className="text-xl font-bold text-gray-900 leading-tight">{value}</p>
-      </div>
-    </div>
-  );
-}
+            <form onSubmit={handleSaveProfile} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+              {/* Campus Info */}
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#ff6b35]">Campus Info</h4>
+                
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5">Full Name</label>
+                  <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#ff6b35] outline-none transition-colors" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">Branch</label>
+                    <input type="text" name="branch" value={formData.branch} onChange={handleInputChange} placeholder="e.g. Information Technology" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#ff6b35] outline-none transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">Year</label>
+                    <select name="year" value={formData.year} onChange={handleInputChange} className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#ff6b35] outline-none transition-colors bg-white">
+                      <option value="">Select Year</option>
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-function Badge({ icon, title, unlocked }) {
-  return (
-    <div className={`flex flex-col items-center gap-3 transition-all ${unlocked ? 'opacity-100' : 'opacity-40 grayscale'}`}>
-      <div className={`flex h-16 w-16 items-center justify-center rounded-full border-2 shadow-sm ${unlocked ? 'border-[#ff6b35]/20 bg-[#ff6b35]/5 text-[#ff6b35]' : 'border-gray-200 bg-gray-50 text-gray-400'}`}>
-        <i className={`fi ${icon} text-2xl mt-1`}></i>
-      </div>
-      <p className="text-xs font-semibold text-gray-700">{title}</p>
-    </div>
-  );
-}
+              {/* Coding Profiles */}
+              <div className="space-y-4 pt-4 border-t border-gray-100">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#ff6b35]">Coding & Social Links</h4>
+                
+                <div className="relative">
+                  <i className="fi fi-brands-github absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                  <input type="url" name="github" value={formData.github} onChange={handleInputChange} placeholder="GitHub URL" className="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-2.5 text-sm focus:border-[#ff6b35] outline-none transition-colors" />
+                </div>
 
-function InventoryItem({ icon, color }) {
-  return (
-    <div className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-transform hover:-translate-y-1 cursor-pointer shadow-sm ${color}`}>
-      <i className={`fi ${icon} text-lg mt-0.5`}></i>
+                <div className="relative">
+                  <i className="fi fi-brands-linkedin absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                  <input type="url" name="linkedin" value={formData.linkedin} onChange={handleInputChange} placeholder="LinkedIn URL" className="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-2.5 text-sm focus:border-[#ff6b35] outline-none transition-colors" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="relative">
+                    <i className="fi fi-rr-code absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="url" name="leetcode" value={formData.leetcode} onChange={handleInputChange} placeholder="LeetCode URL" className="w-full rounded-xl border border-gray-200 pl-9 pr-3 py-2.5 text-xs focus:border-[#ff6b35] outline-none transition-colors" />
+                  </div>
+                  <div className="relative">
+                    <i className="fi fi-rr-laptop-code absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="url" name="codechef" value={formData.codechef} onChange={handleInputChange} placeholder="CodeChef URL" className="w-full rounded-xl border border-gray-200 pl-9 pr-3 py-2.5 text-xs focus:border-[#ff6b35] outline-none transition-colors" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6">
+                <button type="submit" className="w-full bg-[#ff6b35] text-white font-bold py-3 rounded-xl hover:bg-[#e85a25] transition-colors shadow-lg shadow-orange-100">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

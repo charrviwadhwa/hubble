@@ -8,7 +8,10 @@ import societyRouter from './routes/societies.js';
 import aiRoutes from './routes/ai.routes.js'
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'https://hubble-lime-gamma.vercel.app/'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes

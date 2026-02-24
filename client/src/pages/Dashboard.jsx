@@ -140,6 +140,52 @@ export default function Dashboard() {
             )}
           </section>
 
+          {/* 🛡️ Organizer Management Section (Only shows if they manage societies) */}
+{user?.role === 'admin' && (
+  <section className="mt-12">
+    <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-4">
+      <h2 className="text-lg font-semibold text-gray-900">Manage Your Hubs</h2>
+      <button 
+        onClick={() => navigate('/settings')} 
+        className="text-sm font-medium text-gray-500 hover:text-[#ff6b35] transition-colors"
+      >
+        Hub Settings &rarr;
+      </button>
+    </div>
+
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {/* Example of a quick-action card for organizers */}
+      <div className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-[#ff6b35] hover:shadow-md">
+        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-[#ff6b35]">
+          <i className="fi fi-rr-settings-sliders text-lg"></i>
+        </div>
+        <h3 className="font-bold text-gray-900">Society Admin</h3>
+        <p className="mt-1 text-xs text-gray-500 mb-4">Edit society details, manage co-founders, and view stats.</p>
+        <button 
+          onClick={() => navigate('/settings')}
+          className="w-full rounded-lg bg-gray-900 py-2 text-xs font-bold text-white transition-colors hover:bg-black"
+        >
+          Open Hub Settings
+        </button>
+      </div>
+
+      <div className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-[#ff6b35] hover:shadow-md">
+        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <i className="fi fi-rr-users text-lg"></i>
+        </div>
+        <h3 className="font-bold text-gray-900">Attendance Center</h3>
+        <p className="mt-1 text-xs text-gray-500 mb-4">View registrations and mark attendance for your events.</p>
+        <button 
+          onClick={() => navigate('/organizer/attendance')}
+          className="w-full rounded-lg bg-blue-600 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700"
+        >
+          Review Registrations
+        </button>
+      </div>
+    </div>
+  </section>
+)}
+
         </main>
       </div>
     </div>

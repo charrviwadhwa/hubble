@@ -17,6 +17,8 @@ import EditSociety from './pages/EditSociety';
 import EditEvent from './pages/EditEvent';
 import Notifications from './pages/Notifications';
 import SocietiesPage from './pages/SocietiesPage';
+import EventAttendees from './pages/EventAttendees';
+import OrganizerAttendance from './pages/OrganiserDashboard';
 
 function App() {
   return (
@@ -25,6 +27,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/organizer/attendance" element={<OrganizerAttendance />} />
         
         {/* Protected Event Feed */}
         <Route
@@ -87,6 +90,7 @@ function App() {
         <Route path="/settings/events/:id" element={<EditEvent />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/societies" element={<SocietiesPage />} />
+        <Route path="/manage-event/:eventId/attendees" element={<EventAttendees />} />
 
         {/* Protected Personal Dashboard */}
         <Route

@@ -93,7 +93,8 @@ router.get('/my-registrations', authenticateToken, async (req, res) => {
         location: events.location,
         banner: events.banner,
         eventType: events.eventType,
-        shortDescription: events.shortDescription
+        shortDescription: events.shortDescription,
+        attended: registrations.attended
       })
       .from(registrations)
       .innerJoin(events, eq(registrations.eventId, events.id))
@@ -148,6 +149,35 @@ router.get('/organizer/all-stats', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error("DB Error:", err);
     res.status(500).json({ error: "Failed to fetch organizer stats" });
+  }
+});
+
+// 🟢 FIX: MOVED UP SO IT DOESN'T CONFLICT WITH GET /:id
+// GET EVENTS MANAGED BY THE CURRENT USER (For Attendance Center)
+router.get('/organizer/my-events', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // We find events where the user is either the creator 
+    // OR they are a manager of the society hosting the event
+    const managedEvents = await db.select({
+      id: events.id,
+      title: events.title,
+      startDate: events.startDate,
+      location: events.location,
+      eventType: events.eventType,
+      societyName: societies.name
+    })
+    .from(events)
+    .innerJoin(societies, eq(events.societyId, societies.id))
+    .innerJoin(societyManagers, eq(societies.id, societyManagers.societyId))
+    .where(eq(societyManagers.userId, userId))
+    .orderBy(desc(events.startDate));
+
+    res.json(managedEvents);
+  } catch (err) {
+    console.error("Organizer Events Fetch Error:", err);
+    res.status(500).json({ error: "Failed to fetch managed events." });
   }
 });
 
@@ -272,9 +302,11 @@ router.get('/:id/attendees', authenticateToken, async (req, res) => {
 
     const attendeeList = await db
       .select({
+        userId: users.id,                 // 🔥 FIX: Added so frontend knows the ID
         studentName: users.name,
         studentEmail: users.email,
         registeredAt: registrations.registeredAt,
+        attended: registrations.attended  // 🔥 FIX: Added so UI shows present/absent
       })
       .from(registrations)
       .innerJoin(users, eq(registrations.userId, users.id))
@@ -286,6 +318,38 @@ router.get('/:id/attendees', authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Could not fetch attendee list" });
   }
 });
+
+// 🟢 FIX: MOVED TOGGLE ROUTE NEXT TO GET ATTENDEES
+// TOGGLE ATTENDANCE (Cofounder Fix Applied)
+router.patch('/:eventId/attendees/:userId/check-in', authenticateToken, async (req, res) => {
+  const { eventId, userId } = req.params;
+  const { status } = req.body; // Expecting true or false
+
+  try {
+    const [event] = await db.select().from(events).where(eq(events.id, Number(eventId)));
+    
+    // Security: Only managers can check people in
+    const [isManager] = await db.select().from(societyManagers)
+      .where(and(
+        eq(societyManagers.societyId, event.societyId),
+        eq(societyManagers.userId, req.user.id)
+      ));
+
+    if (!isManager) return res.status(403).json({ error: "Unauthorized" });
+
+    await db.update(registrations)
+      .set({ attended: status })
+      .where(and(
+        eq(registrations.eventId, Number(eventId)),
+        eq(registrations.userId, Number(userId))
+      ));
+
+    res.json({ message: `Attendance marked as ${status ? 'Present' : 'Absent'}` });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update attendance." });
+  }
+});
+
 
 // 8. GET SINGLE EVENT
 router.get('/:id', async (req, res) => {
