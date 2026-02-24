@@ -37,13 +37,13 @@ export default function CreateEvent() {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
 
     // Fetch User
-    fetch('http://localhost:3001/api/users/me/profile', { headers })
+    fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers })
       .then(res => res.json())
       .then(data => setUser(data))
       .catch(err => console.error("Profile Fetch Error:", err));
 
     // Fetch societies
-    fetch("http://localhost:3001/api/societies/my", { headers })
+    fetch("https://hubble-d9l6.onrender.com/api/societies/my", { headers })
       .then(res => res.json())
       .then(data => {
         setMySocieties(Array.isArray(data) ? data : []);
@@ -86,7 +86,7 @@ export default function CreateEvent() {
     setError(""); 
 
     try {
-      const res = await fetch('http://localhost:3001/api/ai/refine-event', {
+      const res = await fetch('https://hubble-d9l6.onrender.com/api/ai/refine-event', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ export default function CreateEvent() {
     if (banner) data.append('banner', banner);
 
     try {
-      const res = await fetch('http://localhost:3001/api/events', {
+      const res = await fetch('https://hubble-d9l6.onrender.com/api/events', {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: data 

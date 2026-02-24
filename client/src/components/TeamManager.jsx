@@ -9,7 +9,7 @@ export default function TeamManager({ societyId }) {
   // 1. Fetch the team when the component loads
   const fetchTeam = async () => {
     try {
-      const res = await fetch(`http://localhost:3001/api/societies/${societyId}/managers`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/societies/${societyId}/managers`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (res.ok) {
@@ -31,7 +31,7 @@ export default function TeamManager({ societyId }) {
 
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/societies/${societyId}/managers`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/societies/${societyId}/managers`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export default function TeamManager({ societyId }) {
     if (!window.confirm("Are you sure you want to remove this co-founder's access to the society?")) return;
     
     try {
-      const res = await fetch(`http://localhost:3001/api/societies/${societyId}/managers/${userId}`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/societies/${societyId}/managers/${userId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });

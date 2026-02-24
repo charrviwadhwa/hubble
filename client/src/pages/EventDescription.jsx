@@ -26,18 +26,18 @@ export default function EventDescription() {
         const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
         
         // Fetch User
-        const userRes = await fetch('http://localhost:3001/api/users/me/profile', { headers });
+        const userRes = await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers });
         setUser(await userRes.json());
 
         // Fetch Event Details
-        const eventRes = await fetch(`http://localhost:3001/api/events/${id}`, { headers });
+        const eventRes = await fetch(`https://hubble-d9l6.onrender.com/api/events/${id}`, { headers });
         if (eventRes.ok) {
           const eventData = await eventRes.json();
           setData(eventData);
         }
 
         // Check Registration
-        const regRes = await fetch('http://localhost:3001/api/events/my-registrations', { headers });
+        const regRes = await fetch('https://hubble-d9l6.onrender.com/api/events/my-registrations', { headers });
         const regData = await regRes.json();
         setIsRegistered(regData.some(reg => reg.id === Number(id)));
 
@@ -80,7 +80,7 @@ export default function EventDescription() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/api/events/${id}/register`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/${id}/register`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -140,7 +140,7 @@ export default function EventDescription() {
                 {/* Banner Image */}
                 <div className="h-64 sm:h-80 w-full bg-gray-50">
                   {event.banner ? (
-                    <img src={`http://localhost:3001${event.banner}`} className="w-full h-full object-cover" alt="Event Banner" />
+                    <img src={`https://hubble-d9l6.onrender.com${event.banner}`} className="w-full h-full object-cover" alt="Event Banner" />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center text-gray-300">
                       <i className="fi fi-rr-picture text-4xl"></i>
@@ -181,7 +181,7 @@ export default function EventDescription() {
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden text-[#ff6b35] font-bold">
                       {society.logo ? (
-                        <img src={`http://localhost:3001${society.logo}`} className="h-full w-full object-cover" alt="logo" />
+                        <img src={`https://hubble-d9l6.onrender.com${society.logo}`} className="h-full w-full object-cover" alt="logo" />
                       ) : (
                         society.name ? society.name[0].toUpperCase() : 'H'
                       )}

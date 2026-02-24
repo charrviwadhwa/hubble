@@ -17,12 +17,12 @@ export default function EventAttendees() {
   const fetchData = async () => {
     try {
       // 1. Fetch event details (to show title/society info)
-      const eventRes = await fetch(`http://localhost:3001/api/events/${eventId}`, { headers });
+      const eventRes = await fetch(`https://hubble-d9l6.onrender.com/api/events/${eventId}`, { headers });
       const eData = await eventRes.json();
       setEventData(eData);
 
       // 2. Fetch attendee list
-      const res = await fetch(`http://localhost:3001/api/events/${eventId}/attendees`, { headers });
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/${eventId}/attendees`, { headers });
       const data = await res.json();
       setAttendees(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -32,7 +32,7 @@ export default function EventAttendees() {
 
   useEffect(() => {
     // Fetch user profile for Sidebar
-    fetch('http://localhost:3001/api/users/me/profile', { headers })
+    fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers })
       .then(res => res.json())
       .then(data => setUser(data));
 
@@ -42,7 +42,7 @@ export default function EventAttendees() {
   // Handle Attendance Toggle
   const handleToggleAttendance = async (studentId, currentStatus) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/events/${eventId}/attendees/${studentId}/check-in`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/${eventId}/attendees/${studentId}/check-in`, {
         method: 'PATCH',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: !currentStatus })

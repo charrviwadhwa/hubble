@@ -31,7 +31,7 @@ export default function EditEvent() {
         const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
         
         // Fetch User (for Sidebar/Navbar)
-        fetch('http://localhost:3001/api/users/me/profile', { headers })
+        fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers })
           .then(res => res.json())
           .then(data => setUser(data))
           .catch(err => console.error(err));
@@ -39,7 +39,7 @@ export default function EditEvent() {
         // Fetch Event Data
         // Note: Replace with your actual specific event fetch route if you have one, 
         // e.g., `/api/events/${id}`. Here we fetch all and filter for safety.
-        const eventRes = await fetch('http://localhost:3001/api/events', { headers });
+        const eventRes = await fetch('https://hubble-d9l6.onrender.com/api/events', { headers });
         const eventData = await eventRes.json();
         const targetEvent = eventData.find(e => Number(e.id) === Number(id));
         
@@ -80,7 +80,7 @@ const handleGenerateAI = async () => {
 
   setIsGenerating(true);
   try {
-    const res = await fetch('http://localhost:3001/api/ai/generate-description', {
+    const res = await fetch('https://hubble-d9l6.onrender.com/api/ai/generate-description', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ const handleGenerateAI = async () => {
     if (banner) updateData.append('banner', banner);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/events/${id}`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: updateData 
@@ -152,7 +152,7 @@ const handleGenerateAI = async () => {
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to cancel and delete this event permanently?")) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/events/${id}`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -219,7 +219,7 @@ const handleGenerateAI = async () => {
                   {preview ? (
                     <img src={preview} alt="Preview" className="h-full w-full object-cover" />
                   ) : existingBanner ? (
-                    <img src={`http://localhost:3001${existingBanner}`} alt="Current" className="h-full w-full object-cover" />
+                    <img src={`https://hubble-d9l6.onrender.com${existingBanner}`} alt="Current" className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex flex-col items-center text-gray-400">
                       <i className="fi fi-rr-picture text-2xl mb-1"></i>

@@ -12,11 +12,11 @@ export default function OrganizerAttendance() {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
     
     // Fetch profile
-    fetch('http://localhost:3001/api/users/me/profile', { headers })
+    fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers })
       .then(res => res.json()).then(data => setUser(data));
 
     // Fetch only events this user manages (founder/cofounder)
-    fetch('http://localhost:3001/api/events/organizer/my-events', { headers })
+    fetch('https://hubble-d9l6.onrender.com/api/events/organizer/my-events', { headers })
       .then(res => res.json()).then(data => setEvents(data));
   }, []);
 

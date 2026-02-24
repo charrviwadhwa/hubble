@@ -17,14 +17,14 @@ export default function MySocieties() {
   const itemsPerPage = 5; // You can adjust this number
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/users/me/profile', {
+    fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then((res) => res.json())
     .then((data) => setUser(data))
     .catch(err => console.error(err));
 
-    fetch("http://localhost:3001/api/societies/my", {
+    fetch("https://hubble-d9l6.onrender.com/api/societies/my", {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(res => res.json())
@@ -41,10 +41,10 @@ export default function MySocieties() {
   const handleViewSociety = async (society) => {
     setSelectedSociety(society);
     
-    const resEvents = await fetch(`http://localhost:3001/api/events?societyId=${society.id}`); 
+    const resEvents = await fetch(`https://hubble-d9l6.onrender.com/api/events?societyId=${society.id}`); 
     const dataEvents = await resEvents.json();
     
-    const resStats = await fetch(`http://localhost:3001/api/societies/${society.id}/stats`, {
+    const resStats = await fetch(`https://hubble-d9l6.onrender.com/api/societies/${society.id}/stats`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
     const dataStats = await resStats.json();
@@ -92,7 +92,7 @@ export default function MySocieties() {
                           <div className="flex items-center gap-4">
                             <div className="h-12 w-12 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center text-[#ff6b35] font-bold">
                               {soc.logo ? (
-                                <img src={`http://localhost:3001${soc.logo}`} alt={soc.name} className="h-full w-full object-cover" />
+                                <img src={`https://hubble-d9l6.onrender.com${soc.logo}`} alt={soc.name} className="h-full w-full object-cover" />
                               ) : soc.name[0].toUpperCase()}
                             </div>
                             <div>
@@ -192,7 +192,7 @@ function SocietyDetail({ society, events, stats, onBack }) {
     if (!event || !event.title) return;
     setViewingAttendeesFor(event);
     try {
-      const res = await fetch(`http://localhost:3001/api/events/organizer/all-stats`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/organizer/all-stats`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (res.ok) {
@@ -316,7 +316,7 @@ function SocietyDetail({ society, events, stats, onBack }) {
         <div className="flex items-center gap-6">
           <div className="h-20 w-20 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-3xl font-bold text-[#ff6b35] overflow-hidden">
             {society.logo ? (
-              <img src={`http://localhost:3001${society.logo}`} alt={society.name} className="h-full w-full object-cover" />
+              <img src={`https://hubble-d9l6.onrender.com${society.logo}`} alt={society.name} className="h-full w-full object-cover" />
             ) : society.name?.[0].toUpperCase()}
           </div>
           <div>
@@ -399,7 +399,7 @@ function SmallEventCard({ event, onClick }) {
     <div onClick={onClick} className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-3 transition-all hover:border-[#ff6b35] hover:shadow-sm cursor-pointer">
       <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300">
         {event.banner ? (
-          <img src={`http://localhost:3001${event.banner}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Event" />
+          <img src={`https://hubble-d9l6.onrender.com${event.banner}`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Event" />
         ) : (
           <i className="fi fi-rr-picture text-xl"></i>
         )}

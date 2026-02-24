@@ -36,11 +36,11 @@ export default function EditSociety() {
       
       try {
         // Fetch User Profile for TopBar/Sidebar
-        const userRes = await fetch('http://localhost:3001/api/users/me/profile', { headers });
+        const userRes = await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers });
         setUser(await userRes.json());
 
         // Fetch Society Data
-        const socRes = await fetch('http://localhost:3001/api/societies/my', { headers });
+        const socRes = await fetch('https://hubble-d9l6.onrender.com/api/societies/my', { headers });
         const socData = await socRes.json();
         
         // Find the specific society we are trying to edit
@@ -64,7 +64,7 @@ export default function EditSociety() {
         });
         
         if (currentSociety.logo) {
-          setLogoPreview(`http://localhost:3001${currentSociety.logo}`);
+          setLogoPreview(`https://hubble-d9l6.onrender.com${currentSociety.logo}`);
         }
 
       } catch (err) {
@@ -101,7 +101,7 @@ export default function EditSociety() {
     if (logoFile) submitData.append('logo', logoFile);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/societies/${id}`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/societies/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: submitData
@@ -132,7 +132,7 @@ export default function EditSociety() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/api/societies/${id}`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/societies/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });

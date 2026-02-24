@@ -26,7 +26,7 @@ export default function Settings() {
       const headers = { Authorization: `Bearer ${token}` };
       
       try {
-        const userRes = await fetch('http://localhost:3001/api/users/me/profile', { headers });
+        const userRes = await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers });
         const userData = await userRes.json();
         setUser(userData);
         setFormData({ 
@@ -35,12 +35,12 @@ export default function Settings() {
           phone: userData.phone || '+91 ' 
         });
 
-        const socRes = await fetch('http://localhost:3001/api/societies/my', { headers });
+        const socRes = await fetch('https://hubble-d9l6.onrender.com/api/societies/my', { headers });
         const socData = await socRes.json();
         setMySocieties(Array.isArray(socData) ? socData : []);
 
         // ... inside your useEffect
-const eventRes = await fetch('http://localhost:3001/api/events', { headers });
+const eventRes = await fetch('https://hubble-d9l6.onrender.com/api/events', { headers });
 const eventData = await eventRes.json();
 
 // ✅ FIX 1: Use 'socData' (the variable you just defined) instead of 'mySocList'
@@ -70,7 +70,7 @@ setOrganizedEvents(filtered);
   const handleSaveAccount = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/users/me/update', {
+      const res = await fetch('https://hubble-d9l6.onrender.com/api/users/me/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +166,7 @@ setOrganizedEvents(filtered);
         >
           <div className="flex items-center gap-4">
             <img 
-              src={`http://localhost:3001${soc.logo}`} 
+              src={`https://hubble-d9l6.onrender.com${soc.logo}`} 
               alt="" 
               className="h-10 w-10 rounded-lg object-cover bg-gray-50 border border-gray-100" 
             />

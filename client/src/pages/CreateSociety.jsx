@@ -30,7 +30,7 @@ export default function CreateSociety() {
   const [adminList, setAdminList] = useState([]); 
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/users/me/profile', {
+    fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(res => res.json())
@@ -98,7 +98,7 @@ export default function CreateSociety() {
     data.append('admins', JSON.stringify(adminList));
 
     try {
-      const res = await fetch('http://localhost:3001/api/societies/create', {
+      const res = await fetch('https://hubble-d9l6.onrender.com/api/societies/create', {
         method: 'POST',
         headers: { 
           Authorization: `Bearer ${localStorage.getItem('token')}` 

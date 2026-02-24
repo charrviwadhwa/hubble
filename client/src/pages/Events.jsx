@@ -21,12 +21,12 @@ export default function Events() {
   useEffect(() => {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
     
-    fetch('http://localhost:3001/api/users/me/profile', { headers })
+    fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers })
       .then(res => res.json())
       .then(data => setUser(data))
       .catch(err => console.error(err));
 
-    fetch('http://localhost:3001/api/societies/my', { headers })
+    fetch('https://hubble-d9l6.onrender.com/api/societies/my', { headers })
       .then(res => res.json())
       .then(data => setMySocieties(data))
       .catch(err => console.error(err));
@@ -37,7 +37,7 @@ export default function Events() {
 
   const fetchUserRegistrations = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/events/my-registrations', {
+      const res = await fetch('https://hubble-d9l6.onrender.com/api/events/my-registrations', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
@@ -50,8 +50,8 @@ export default function Events() {
 
   const fetchEvents = async (query = '') => {
     const url = query
-      ? `http://localhost:3001/api/events?q=${query}`
-      : 'http://localhost:3001/api/events';
+      ? `https://hubble-d9l6.onrender.com/api/events?q=${query}`
+      : 'https://hubble-d9l6.onrender.com/api/events';
     try {
       const res = await fetch(url);
       const data = await res.json();

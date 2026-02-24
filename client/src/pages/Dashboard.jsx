@@ -16,7 +16,7 @@ export default function Dashboard() {
     const headers = { Authorization: `Bearer ${token}` };
 
     // 1. Fetch Profile
-    fetch('http://localhost:3001/api/users/me/profile', { headers })
+    fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers })
       .then((res) => res.json())
       .then((data) => setUser(data))
       .catch(err => console.error(err));
@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   const fetchMyRegistrations = async (headers) => {
     try {
-      const res = await fetch('http://localhost:3001/api/events/my-registrations', { 
+      const res = await fetch('https://hubble-d9l6.onrender.com/api/events/my-registrations', { 
         headers: headers || { Authorization: `Bearer ${localStorage.getItem('token')}` } 
       });
       

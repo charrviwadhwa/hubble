@@ -29,7 +29,7 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
 
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/api/events/${event.id}/register`, {
+      const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/${event.id}/register`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -78,7 +78,7 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
         >
           {event.banner ? (
             <img 
-              src={`http://localhost:3001${event.banner}`} 
+              src={`https://hubble-d9l6.onrender.com${event.banner}`} 
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               alt={event.title}
             />
