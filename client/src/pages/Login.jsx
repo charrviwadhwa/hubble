@@ -23,9 +23,9 @@ export default function Login() {
         localStorage.setItem('token', data.token);
         // Optional: you can replace this alert with your cool Toast notification later!
         
-        navigate('/dashboard');
+        navigate('/events');
       } else {
-        
+        alert("Login failed. Please check your credentials.");
       }
     } catch (error) {
       

@@ -102,7 +102,6 @@ export default function TopBar({ user }) {
       <div className="flex items-center gap-3 pl-4 border-l border-gray-100">
         <div className="text-right hidden sm:block">
           <p className="text-xs font-bold text-gray-900">{user?.name || 'Hubble User'}</p>
-          <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">{user?.role || 'Member'}</p>
         </div>
         <div className="h-10 w-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center font-bold text-[#ff6b35] shadow-sm">
           {user?.name?.[0] || 'H'}

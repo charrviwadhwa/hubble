@@ -28,7 +28,7 @@ function Icon({ type }) {
 }
 
 const menuItems = [
-  { label: 'Overview', to: '/dashboard', icon: 'grid' }, 
+ 
   { label: 'Events', to: '/events', icon: 'spark' },
   { label: 'Societies', to: '/my-societies', icon: 'image' },
   { label: 'Profile', to: '/profile', icon: 'profile' },

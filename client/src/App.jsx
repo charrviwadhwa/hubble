@@ -5,7 +5,6 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Events from './pages/Events';
-import Dashboard from './pages/Dashboard'; // Import your new Dashboard
 import ProtectedRoute from './components/ProtectedRoute';
 import MySocieties from './pages/MySocieties';
 import CreateSociety from './pages/CreateSociety';
@@ -92,15 +91,7 @@ function App() {
         <Route path="/societies" element={<SocietiesPage />} />
         <Route path="/manage-event/:eventId/attendees" element={<EventAttendees />} />
 
-        {/* Protected Personal Dashboard */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+   
       </Routes>
     </Router>
   );

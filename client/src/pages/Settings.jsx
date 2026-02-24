@@ -7,7 +7,7 @@ import { triggerHubbleNotif } from '../utils/notify';
 export default function Settings() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [currentTab, setCurrentTab] = useState('Account Settings');
+  const [currentTab, setCurrentTab] = useState('My Societies');
   const [loading, setLoading] = useState(false);
 
   // Data States
@@ -16,8 +16,7 @@ export default function Settings() {
   const [organizedEvents, setOrganizedEvents] = useState([]);
   
   // UI States
-  const [twoFactor, setTwoFactor] = useState(true);
-  const [loginAlert, setLoginAlert] = useState(true);
+ 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,7 +88,7 @@ setOrganizedEvents(filtered);
     }
   };
 
-  const tabs = ['Account Settings', 'My Societies', 'My Events'];
+  const tabs = ['My Societies', 'My Events'];
 
   return (
     <div className="min-h-screen bg-[#f1f3f6] text-[#1a1a1a] font-sans">
@@ -131,7 +130,7 @@ setOrganizedEvents(filtered);
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    {tab === 'Account Settings' && <i className="fi fi-rr-user text-lg"></i>}
+                    
                     {tab === 'My Societies' && <i className="fi fi-rr-bank text-lg"></i>}
                     {tab === 'My Events' && <i className="fi fi-rr-calendar-star text-lg"></i>}
                     {tab}
@@ -146,45 +145,6 @@ setOrganizedEvents(filtered);
 
           <div className="max-w-3xl pr-6 pb-20">
             
-            {/* =========================================
-                ACCOUNT SETTINGS TAB
-            ========================================= */}
-            {currentTab === 'Account Settings' && (
-              <div className="space-y-10 animate-in fade-in duration-300">
-                <section>
-                  <h3 className="text-base font-semibold text-gray-900 mb-1">Profile Information</h3>
-                  <p className="text-sm text-gray-500 mb-8">Manage your personal details and keep your contact info up to date.</p>
-                  
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-                      <label className="text-sm text-gray-700">Profile Picture</label>
-                      <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-medium overflow-hidden border border-gray-200">
-                           {user?.name ? user.name[0].toUpperCase() : 'U'}
-                        </div>
-                        <button className="text-sm text-gray-500 hover:text-gray-800 transition-colors">Delete</button>
-                        <button className="text-sm text-[#ff6b35] hover:text-[#e85a25] font-medium transition-colors">Update</button>
-                      </div>
-                    </div>
-
-                    <BoutiqInput label="Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                    <BoutiqInput label="Email" value={formData.email} readOnly={true} />
-                    <BoutiqInput label="Phone Number" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-                  </div>
-                </section>
-
-                <hr className="border-gray-100" />
-
-                <section>
-                  <h3 className="text-base font-semibold text-gray-900 mb-1">Security</h3>
-                  <p className="text-sm text-gray-500 mb-8">Keep your account secure with extra authentication and alerts.</p>
-                  <div className="space-y-6">
-                    <ToggleRow label="Two-Factor Authentication" description="Add an extra layer of protection to your account." isOn={twoFactor} onToggle={() => setTwoFactor(!twoFactor)} />
-                    <ToggleRow label="Login Alert Notification" description="Get notified when your account is accessed from a new device." isOn={loginAlert} onToggle={() => setLoginAlert(!loginAlert)} />
-                  </div>
-                </section>
-              </div>
-            )}
 
             {/* =========================================
                 MY SOCIETIES TAB

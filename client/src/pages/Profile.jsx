@@ -7,11 +7,10 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({ totalRegistered: 0, attended: 0, upcoming: 0 });
   const [pastEvents, setPastEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
   
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', branch: '', year: '', github: '', linkedin: '', leetcode: '', codechef: ''
+    name: '', branch: '', year: '', github: '', linkedin: ''
   });
 
   const fetchData = async () => {
@@ -20,81 +19,72 @@ export default function Profile() {
 
       // 1. Fetch User Profile
       const userRes = await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', { headers });
-      const userData = await userRes.json();
-      
-      setUser(userData);
-      setFormData({
-        name: userData.name || '',
-        branch: userData.branch || '',
-        year: userData.year || '',
-        github: userData.github || '',
-        linkedin: userData.linkedin || '',
-        leetcode: userData.leetcode || '',
-        codechef: userData.codechef || ''
-      });
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        setUser(userData);
+        setFormData({
+          name: userData.name || '',
+          branch: userData.branch || '',
+          year: userData.year || '',
+          github: userData.github || '',
+          linkedin: userData.linkedin || ''
+        });
+      }
 
       // 2. Fetch Registrations
       const regRes = await fetch('https://hubble-d9l6.onrender.com/api/events/my-registrations', { headers });
-      const regData = await regRes.json();
+      if (regRes.ok) {
+        const regData = await regRes.json();
+        if (Array.isArray(regData)) {
+          const now = new Date();
+          const total = regData.length;
+          const attendedCount = regData.filter(event => event.attended).length;
+          const upcomingCount = regData.filter(event => new Date(event.startDate) > now).length;
 
-      if (Array.isArray(regData)) {
-        const now = new Date();
-        const total = regData.length;
-        const attendedCount = regData.filter(event => event.attended).length;
-        const upcomingCount = regData.filter(event => new Date(event.startDate) > now).length;
-
-        setStats({ totalRegistered: total, attended: attendedCount, upcoming: upcomingCount });
-        setPastEvents(regData.filter(event => new Date(event.startDate) <= now));
+          setStats({ totalRegistered: total, attended: attendedCount, upcoming: upcomingCount });
+          setPastEvents(regData.filter(event => new Date(event.startDate) <= now));
+        }
       }
-      setLoading(false);
     } catch (err) {
       console.error("Failed to load profile data", err);
-      setLoading(false);
     }
   };
 
   useEffect(() => { fetchData(); }, []);
 
   const handleSaveProfile = async (e) => {
-  e.preventDefault();
-  
-  // Create a clean object with ONLY the columns that exist in your schema.js
-  const cleanData = {
-    name: formData.name,
-    branch: formData.branch,
-    year: formData.year,
-    github: formData.github,
-    linkedin: formData.linkedin
-  };
+    e.preventDefault();
+    const cleanData = {
+      name: formData.name,
+      branch: formData.branch,
+      year: formData.year,
+      github: formData.github,
+      linkedin: formData.linkedin
+    };
 
-  try {
-    const res = await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', {
-      method: 'PATCH',
-      headers: { 
-        'Content-Type': 'application/json', 
-        Authorization: `Bearer ${localStorage.getItem('token')}` 
-      },
-      body: JSON.stringify(cleanData) // Send the cleaned data
-    });
+    try {
+      const res = await fetch('https://hubble-d9l6.onrender.com/api/users/me/profile', {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json', 
+          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify(cleanData)
+      });
 
-    if (res.ok) {
-      setUser({ ...user, ...cleanData });
-      setIsEditing(false);
-      triggerHubbleNotif("Success", "Profile updated!");
-    } else {
-      const errorData = await res.json();
-      console.error("Backend rejection:", errorData);
+      if (res.ok) {
+        setUser({ ...user, ...cleanData });
+        setIsEditing(false);
+        triggerHubbleNotif("Success", "Profile updated!");
+      }
+    } catch (err) {
+      console.error("Network error:", err);
     }
-  } catch (err) {
-    console.error("Network error:", err);
-  }
-};
+  };
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  if (loading) return <div className="min-h-screen bg-[#f1f3f6] flex items-center justify-center font-bold text-[#ff6b35]">Loading Profile...</div>;
 
   return (
     <div className="min-h-screen bg-[#f1f3f6] font-sans relative">
@@ -123,24 +113,26 @@ export default function Profile() {
                   <i className="fi fi-rr-pencil text-xs mt-0.5"></i>
                 </button>
                 <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-orange-50 to-orange-100/50 -z-10"></div>
-                {/* Replace the initial logic with this dynamic avatar URL */}
-                  <div className="relative mx-auto w-28 h-28 mb-4 mt-2">
-                    <img 
-                      src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${user?.name}&backgroundColor=ff6b35,f1f3f6`} 
-                      alt="Avatar"
-                      className="w-full h-full rounded-full bg-white shadow-xl ring-4 ring-white object-cover"
-                    />
-                    {user?.role === 'Founder' && (
-                      <div className="absolute bottom-0 right-0 bg-[#ff6b35] text-white p-2 rounded-full ring-4 ring-white shadow-lg">
-                        <i className="fi fi-rr-star text-xs"></i>
-                      </div>
-                    )}
-                  </div>
-                <h2 className="text-xl font-black text-gray-900">{user?.name}</h2>
-                <p className="text-sm font-mono text-gray-500 mb-4">{user?.email}</p>
+                
+                <div className="relative mx-auto w-28 h-28 mb-4 mt-2">
+                  <img 
+                    src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${user?.name || 'Hubble'}&backgroundColor=ff6b35,f1f3f6`} 
+                    alt="Avatar"
+                    className="w-full h-full rounded-full bg-white shadow-xl ring-4 ring-white object-cover"
+                  />
+                  {user?.role === 'Founder' && (
+                    <div className="absolute bottom-0 right-0 bg-[#ff6b35] text-white p-2 rounded-full ring-4 ring-white shadow-lg">
+                      <i className="fi fi-rr-star text-xs"></i>
+                    </div>
+                  )}
+                </div>
+
+                <h2 className="text-xl font-black text-gray-900">{user?.name || "Hubble Member"}</h2>
+                <p className="text-sm font-mono text-gray-500 mb-4">{user?.email || "..."}</p>
                 <span className="inline-block bg-orange-50 text-[#ff6b35] border border-orange-100 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg mb-6">
                   {user?.role || "Student"}
                 </span>
+                
                 <div className="bg-gray-50 rounded-2xl p-4 text-left space-y-3 border border-gray-100 mb-6">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Branch</p>
@@ -151,6 +143,7 @@ export default function Profile() {
                     <p className="text-sm font-bold text-gray-900">{user?.year || "Not set"}</p>
                   </div>
                 </div>
+
                 <div className="flex flex-wrap justify-center gap-3">
                   {user?.github && <a href={user.github} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-900 border border-gray-200"><i className="fi fi-brands-github text-lg mt-1"></i></a>}
                   {user?.linkedin && <a href={user.linkedin} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 border border-blue-100"><i className="fi fi-brands-linkedin text-lg mt-1"></i></a>}
@@ -158,9 +151,8 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: THE DASHBOARD */}
+            {/* RIGHT COLUMN: DASHBOARD */}
             <div className="lg:col-span-8 space-y-8">
-              {/* STATS GRID */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
                   <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Total Joined</p>
@@ -176,7 +168,6 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* EVENT HISTORY */}
               <div className="space-y-4">
                 <h3 className="text-lg font-black text-gray-900">Event History</h3>
                 {pastEvents.map((event) => (
@@ -216,7 +207,6 @@ export default function Profile() {
         </main>
       </div>
 
-      {/* EDIT MODAL (Remains as you had it) */}
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-4">

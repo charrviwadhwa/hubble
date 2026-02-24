@@ -9,7 +9,7 @@ export default function SocietiesPage() {
   const handleNavFeatures = () => navigate('/#features-section');
   const handleRegisterSociety = () => navigate('/signup'); // or /create-society depending on your flow
   const handleNavContact = () => navigate('/#contact-section');
-  
+
 
   return (
     <div className="min-h-screen bg-[#fdfdfd] font-sans text-gray-900 overflow-x-hidden selection:bg-[#ff6b35] selection:text-white">
@@ -119,17 +119,19 @@ export default function SocietiesPage() {
             </div>
             <h3 className="text-4xl font-black text-black mb-4 leading-tight group-hover:text-[#ff6b35] transition-colors">Master your roster.</h3>
             <p className="text-base font-bold text-gray-600 mb-6">
-              Our ultra-clean dashboard lets you effortlessly manage members, track event attendance, and oversee your society's entire ecosystem in one organized place. No more lost data.
-            </p>
-          </div>
-          <div className="w-full lg:w-2/3 relative">
-            <Decoration className="absolute -top-10 -right-10 w-16 h-16 animate-float-slow z-0" type="empty-circle" />
-            {/* 💻 BROWSER MOCKUP 1 */}
-            <BrowserMockup 
-              url="hubble.in/dashboard" 
-              imageSrc="/image.png" 
-              altText="Society Dashboard Screenshot"
-            />
+                Effortlessly browse upcoming hackathons and workshops, track your registrations, and build a coding profile that shows off your real campus impact. All in one place.
+              </p>
+            </div>
+
+            <div className="w-full lg:w-2/3 relative">
+              <Decoration className="absolute -top-10 -right-10 w-16 h-16 animate-float-slow z-0" type="empty-circle" />
+              
+              {/* 💻 BROWSER MOCKUP: Updated to show the new Profile/Events focus */}
+              <BrowserMockup 
+                url="hubble.in/profile" 
+                imageSrc="/image.png" // 💡 Replace with a screenshot of your new Profile page!
+                altText="Hubble Student Profile Screenshot"
+              />
           </div>
         </div>
       </section>
