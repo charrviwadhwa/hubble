@@ -1,80 +1,66 @@
 import express from 'express';
-import { db } from '../db/index.js'; // Ensure the path and extension are correct
-import { societies,events,registrations,users } from '../db/schema.js';
+import { db } from '../db/index.js'; 
+import { societies, events, registrations, users, societyManagers } from '../db/schema.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { eq,sql,and } from 'drizzle-orm';
+import { eq, sql, and, count, inArray } from 'drizzle-orm';
 import multer from 'multer';
 import path from 'path';
 
 const router = express.Router();
 
+// --- MULTER SETUP ---
 const storage = multer.diskStorage({
   destination: './uploads/logos/',
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
-const upload = multer({ storage ,
+const upload = multer({ 
+  storage,
   fileFilter: (req, file, cb) => {
-    // Define the allowed extensions and mimetypes
     const allowedTypes = /jpeg|jpg|png|webp|gif/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
 
     if (extname && mimetype) {
-      return cb(null, true); // Accept the file
+      return cb(null, true); 
     } else {
-      // Reject the file with a specific error message
       cb(new Error("Only image files (JPG, PNG, WEBP, GIF) are allowed!"));
     }
   }
 });
 
 
-// 1. Create a Society
-// backend/routes/societies.js
-
-// 1. Create a Society (Updated with strict error handling)
+// ==========================================
+// 1. CREATE SOCIETY
+// ==========================================
 router.post('/create', authenticateToken, (req, res, next) => {
-  // 🔥 Wrap upload in a function to catch the fileFilter error
   upload.single('logo')(req, res, (err) => {
     if (err) {
-      // Catch Multer limit errors (like file size)
       if (err instanceof multer.MulterError) {
         return res.status(400).json({ error: `Upload error: ${err.message}` });
       }
-      // Catch our custom "Only image files..." error
       return res.status(400).json({ error: err.message });
     }
-    next(); // No error? Move to the database insertion
+    next(); 
   });
 }, async (req, res) => {
-  const { 
-    name, 
-    category, 
-    description, 
-    collegeName, 
-    presidentName, 
-    insta, 
-    mail, 
-    linkedin 
-  } = req.body;
-
+  const { name, category, description, collegeName, presidentName, insta, mail, linkedin } = req.body;
   const logoPath = req.file ? `/uploads/logos/${req.file.filename}` : null;
 
   try {
+    // A. Create the society
     const [newSociety] = await db.insert(societies).values({
-      name,
-      category, 
-      description,
-      collegeName, 
-      presidentName, 
-      instaLink: insta,
-      mailLink: mail,
-      linkedinLink: linkedin,
-      logo: logoPath,
-      ownerId: req.user.id 
+      name, category, description, collegeName, presidentName, 
+      instaLink: insta, mailLink: mail, linkedinLink: linkedin,
+      logo: logoPath, ownerId: req.user.id 
     }).returning();
+
+    // B. Cofounder Fix: Immediately add the creator to the society_managers table
+    await db.insert(societyManagers).values({
+      userId: req.user.id,
+      societyId: newSociety.id
+    });
 
     res.json(newSociety);
   } catch (err) {
@@ -83,33 +69,53 @@ router.post('/create', authenticateToken, (req, res, next) => {
   }
 });
 
-// 2. Get My Societies
+
+// ==========================================
+// 2. GET MY SOCIETIES (Cofounder Fix Applied)
+// ==========================================
 router.get('/my', authenticateToken, async (req, res) => {
   try {
-    const mySocieties = await db.select()
-      .from(societies)
-      .where(eq(societies.ownerId, req.user.id));
+    // Instead of checking ownerId, we check the societyManagers table
+    // so it fetches societies you founded AND ones you co-manage
+    const mySocieties = await db.select({
+      id: societies.id,
+      name: societies.name,
+      category: societies.category,
+      logo: societies.logo,
+      ownerId: societies.ownerId // Needed for UI "Founder" badge
+    })
+    .from(societies)
+    .innerJoin(societyManagers, eq(societies.id, societyManagers.societyId))
+    .where(eq(societyManagers.userId, req.user.id));
+    
     res.json(mySocieties);
   } catch (err) {
     res.status(500).json({ message: "Error fetching your societies" });
   }
 });
 
+
+// ==========================================
+// 3. GET SOCIETY STATS (Cofounder Fix Applied)
+// ==========================================
 router.get('/:id/stats', authenticateToken, async (req, res) => {
   const societyId = parseInt(req.params.id);
 
   try {
-    // 1. Get Society Totals
+    // Security: Check if user is a manager
+    const [isManager] = await db.select().from(societyManagers)
+      .where(and(eq(societyManagers.societyId, societyId), eq(societyManagers.userId, req.user.id)));
+      
+    if (!isManager) return res.status(403).json({ error: "Unauthorized access to stats." });
+
     const [stats] = await db.select({
       totalRegistrations: sql`count(${registrations.id})`,
-      // Logic for 'attended' can be a boolean column in your registrations table
       totalAttended: sql`count(case when ${registrations.attended} = true then 1 end)`
     })
     .from(registrations)
     .innerJoin(events, eq(registrations.eventId, events.id))
     .where(eq(events.societyId, societyId));
 
-    // 2. Get User Milestones for Badges
     const [userProgress] = await db.select({
       regCount: sql`count(${registrations.id})`
     })
@@ -121,7 +127,7 @@ router.get('/:id/stats', authenticateToken, async (req, res) => {
       badges: {
         pioneer: userProgress.regCount >= 1,
         regular: userProgress.regCount >= 5,
-        organizer: req.user.role === 'admin'
+        organizer: true
       }
     });
   } catch (err) {
@@ -129,8 +135,11 @@ router.get('/:id/stats', authenticateToken, async (req, res) => {
   }
 });
 
+
+// ==========================================
+// 4. UPDATE SOCIETY (Cofounder Fix Applied)
+// ==========================================
 router.put('/:id', authenticateToken, (req, res, next) => {
-  // Wrap upload to handle Multer validation errors (same as create)
   upload.single('logo')(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError) {
@@ -142,42 +151,24 @@ router.put('/:id', authenticateToken, (req, res, next) => {
   });
 }, async (req, res) => {
   const societyId = parseInt(req.params.id);
-  const { 
-    name, category, description, collegeName, 
-    presidentName, insta, mail, linkedin 
-  } = req.body;
+  const { name, category, description, collegeName, presidentName, insta, mail, linkedin } = req.body;
 
   try {
-    // 1. Verify Ownership: Ensure the logged-in user owns this society
-    const [existingSociety] = await db.select()
-      .from(societies)
-      .where(and(
-        eq(societies.id, societyId),
-        eq(societies.ownerId, req.user.id) // 🔒 Security Check
-      ));
+    // Security: Check if user is a manager (founder or cofounder)
+    const [isManager] = await db.select().from(societyManagers)
+      .where(and(eq(societyManagers.societyId, societyId), eq(societyManagers.userId, req.user.id)));
 
-    if (!existingSociety) {
+    if (!isManager) {
       return res.status(403).json({ error: "Unauthorized: You can only edit societies you manage." });
     }
 
-    // 2. Prepare Update Data
     const updateData = {
-      name,
-      category,
-      description,
-      collegeName,
-      presidentName,
-      instaLink: insta,
-      mailLink: mail,
-      linkedinLink: linkedin,
+      name, category, description, collegeName, presidentName,
+      instaLink: insta, mailLink: mail, linkedinLink: linkedin,
     };
 
-    // Only update the logo if a new file was actually uploaded
-    if (req.file) {
-      updateData.logo = `/uploads/logos/${req.file.filename}`;
-    }
+    if (req.file) updateData.logo = `/uploads/logos/${req.file.filename}`;
 
-    // 3. Perform the DB Update
     const [updatedSociety] = await db.update(societies)
       .set(updateData)
       .where(eq(societies.id, societyId))
@@ -185,41 +176,112 @@ router.put('/:id', authenticateToken, (req, res, next) => {
 
     res.json(updatedSociety);
   } catch (err) {
-    console.error("Update Society Error:", err);
     res.status(500).json({ error: "Database error: Could not update society." });
   }
 });
 
 
 // ==========================================
-// 4. DELETE a Society (Protected - Owner Only)
+// 5. DELETE SOCIETY (Cofounder Fix Applied)
 // ==========================================
 router.delete('/:id', authenticateToken, async (req, res) => {
   const societyId = parseInt(req.params.id);
 
   try {
-    // 1. Verify Ownership
-    const [existingSociety] = await db.select()
-      .from(societies)
-      .where(and(
-        eq(societies.id, societyId),
-        eq(societies.ownerId, req.user.id) // 🔒 Security Check
-      ));
+    // Security: Check if user is a manager (founder or cofounder)
+    const [isManager] = await db.select().from(societyManagers)
+      .where(and(eq(societyManagers.societyId, societyId), eq(societyManagers.userId, req.user.id)));
 
-    if (!existingSociety) {
+    if (!isManager) {
       return res.status(403).json({ error: "Unauthorized: You can only delete societies you manage." });
     }
 
-    // 2. Delete from Database
-    // Note: If you have foreign key constraints in your schema, 
-    // Drizzle will automatically delete related events if you set ON DELETE CASCADE.
+    // Delete relationships to avoid foreign key errors (If not using cascade)
+    await db.delete(societyManagers).where(eq(societyManagers.societyId, societyId));
     await db.delete(societies).where(eq(societies.id, societyId));
 
     res.json({ message: "Society successfully deleted." });
   } catch (err) {
-    console.error("Delete Society Error:", err);
-    res.status(500).json({ error: "Could not delete society. Please check if there are active events tied to it." });
+    res.status(500).json({ error: "Could not delete society. Please check active events." });
   }
 });
 
-export default router; // Use export default instead of module.exports
+
+// ==========================================
+// 6. TEAM MANAGEMENT: GET MANAGERS
+// ==========================================
+router.get('/:id/managers', authenticateToken, async (req, res) => {
+  const societyId = parseInt(req.params.id);
+  try {
+    const managers = await db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      isOwner: eq(societies.ownerId, users.id) // Identify the main founder
+    })
+    .from(societyManagers)
+    .innerJoin(users, eq(societyManagers.userId, users.id))
+    .leftJoin(societies, eq(societyManagers.societyId, societies.id))
+    .where(eq(societyManagers.societyId, societyId));
+
+    res.json(managers);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch team." });
+  }
+});
+
+
+// ==========================================
+// 7. TEAM MANAGEMENT: ADD CO-FOUNDER
+// ==========================================
+router.post('/:id/managers', authenticateToken, async (req, res) => {
+  const societyId = parseInt(req.params.id);
+  const { email } = req.body;
+
+  try {
+    const [isManager] = await db.select().from(societyManagers)
+      .where(and(eq(societyManagers.societyId, societyId), eq(societyManagers.userId, req.user.id)));
+    if (!isManager) return res.status(403).json({ error: "Unauthorized" });
+
+    const [newManager] = await db.select().from(users).where(eq(users.email, email));
+    if (!newManager) return res.status(404).json({ error: "No student found with that email on Hubble." });
+
+    const [existing] = await db.select().from(societyManagers)
+      .where(and(eq(societyManagers.societyId, societyId), eq(societyManagers.userId, newManager.id)));
+    if (existing) return res.status(400).json({ error: "This person is already a co-founder." });
+
+    await db.insert(societyManagers).values({ userId: newManager.id, societyId });
+    res.status(201).json({ message: "Co-founder added!", user: newManager });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add team member." });
+  }
+});
+
+
+// ==========================================
+// 8. TEAM MANAGEMENT: REMOVE CO-FOUNDER
+// ==========================================
+router.delete('/:id/managers/:userId', authenticateToken, async (req, res) => {
+  const societyId = parseInt(req.params.id);
+  const targetUserId = parseInt(req.params.userId);
+
+  try {
+    const [isManager] = await db.select().from(societyManagers)
+      .where(and(eq(societyManagers.societyId, societyId), eq(societyManagers.userId, req.user.id)));
+    if (!isManager) return res.status(403).json({ error: "Unauthorized" });
+
+    const [society] = await db.select().from(societies).where(eq(societies.id, societyId));
+    if (society.ownerId === targetUserId) {
+      return res.status(400).json({ error: "You cannot remove the main founder." });
+    }
+
+    await db.delete(societyManagers)
+      .where(and(eq(societyManagers.societyId, societyId), eq(societyManagers.userId, targetUserId)));
+      
+    res.json({ message: "Co-founder removed." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to remove team member." });
+  }
+});
+
+export default router;

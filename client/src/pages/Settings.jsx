@@ -38,21 +38,29 @@ export default function Settings() {
 
         const socRes = await fetch('http://localhost:3001/api/societies/my', { headers });
         const socData = await socRes.json();
-        const mySocList = Array.isArray(socData) ? socData : [];
-        setMySocieties(mySocList);
+        setMySocieties(Array.isArray(socData) ? socData : []);
 
-        const eventRes = await fetch('http://localhost:3001/api/events', { headers });
-        const eventData = await eventRes.json();
-        
-        const mySocietyIds = mySocList.map(soc => Number(soc.id));
-        const filtered = eventData.filter(e => {
-          const matchesSociety = mySocietyIds.includes(Number(e.societyId));
-          const matchesCreator = Number(e.createdBy) === Number(userData.id);
-          return matchesSociety || matchesCreator;
-        });
+        // ... inside your useEffect
+const eventRes = await fetch('http://localhost:3001/api/events', { headers });
+const eventData = await eventRes.json();
 
-        filtered.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-        setOrganizedEvents(filtered);
+// ✅ FIX 1: Use 'socData' (the variable you just defined) instead of 'mySocList'
+// ✅ FIX 2: Ensure eventData is an array before filtering
+const safeEventData = Array.isArray(eventData) ? eventData : [];
+const mySocietyIds = socData.map(soc => Number(soc.id));
+
+const filtered = safeEventData.filter(e => {
+  // Matches if the event belongs to a society you manage
+  const matchesSociety = mySocietyIds.includes(Number(e.societyId));
+  // Matches if you personally created the event
+  const matchesCreator = Number(e.createdBy) === Number(userData.id);
+  
+  return matchesSociety || matchesCreator;
+});
+
+// Sort by date (Newest first)
+filtered.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+setOrganizedEvents(filtered);
       } catch (err) {
         console.error("Data Fetch Error:", err);
       }
@@ -181,33 +189,51 @@ export default function Settings() {
             {/* =========================================
                 MY SOCIETIES TAB
             ========================================= */}
-            {currentTab === 'My Societies' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Manage Societies</h3>
-                <p className="text-sm text-gray-500 mb-6">Select a society to edit its details, roster, and settings.</p>
+            {/* =========================================
+    MY SOCIETIES TAB (Inside Settings.jsx)
+========================================= */}
+{currentTab === 'My Societies' && (
+  <div className="space-y-6 animate-in fade-in duration-300">
+    <h3 className="text-base font-semibold text-gray-900 mb-1">Manage Societies</h3>
+    <p className="text-sm text-gray-500 mb-6">Select a society to edit its details, roster, and settings.</p>
 
-                <div className="grid gap-3">
-                  {mySocieties.length > 0 ? mySocieties.map(soc => (
-                    <div 
-                      key={soc.id} 
-                      onClick={() => navigate(`/settings/societies/${soc.id}`)}
-                      className="group flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-[#ff6b35]/50 hover:shadow-sm transition-all cursor-pointer bg-white"
-                    >
-                      <div className="flex items-center gap-4">
-                        <img src={`http://localhost:3001${soc.logo}`} alt="" className="h-10 w-10 rounded-lg object-cover bg-gray-50 border border-gray-100" />
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">{soc.name}</h4>
-                          <p className="text-xs text-gray-500 mt-0.5">{soc.category}</p>
-                        </div>
-                      </div>
-                      <div className="text-[#ff6b35] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-sm font-medium">
-                        Edit <i className="fi fi-rr-arrow-right"></i>
-                      </div>
-                    </div>
-                  )) : <p className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-xl">You don't manage any societies yet.</p>}
-                </div>
+    <div className="grid gap-3">
+      {mySocieties.length > 0 ? mySocieties.map(soc => (
+        <div 
+          key={soc.id} 
+          onClick={() => navigate(`/settings/societies/${soc.id}`)}
+          className="group flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-[#ff6b35]/50 hover:shadow-sm transition-all cursor-pointer bg-white"
+        >
+          <div className="flex items-center gap-4">
+            <img 
+              src={`http://localhost:3001${soc.logo}`} 
+              alt="" 
+              className="h-10 w-10 rounded-lg object-cover bg-gray-50 border border-gray-100" 
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-medium text-gray-900">{soc.name}</h4>
+                
+                {/* 👑 THE FOUNDER BADGE LOGIC */}
+                {Number(soc.ownerId) === Number(user?.id) && (
+                  <span className="text-[9px] bg-orange-50 text-[#ff6b35] font-black px-1.5 py-0.5 rounded border border-orange-100 uppercase tracking-tight">
+                    Founder
+                  </span>
+                )}
               </div>
-            )}
+              <p className="text-xs text-gray-500 mt-0.5">{soc.category}</p>
+            </div>
+          </div>
+          <div className="text-[#ff6b35] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-sm font-medium">
+            Edit <i className="fi fi-rr-arrow-right"></i>
+          </div>
+        </div>
+      )) : (
+        <p className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-xl">You don't manage any societies yet.</p>
+      )}
+    </div>
+  </div>
+)}
 
             {/* =========================================
                 MY EVENTS TAB

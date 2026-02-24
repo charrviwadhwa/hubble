@@ -70,6 +70,49 @@ export default function CreateEvent() {
     setPreview(URL.createObjectURL(file));
   };
 
+
+  const [refining, setRefining] = useState(false);
+
+const handleAIRefine = async () => {
+  if (!formData.longDescription && !formData.title) {
+    setError("Add a title or a draft description first so Gemini has something to work with!");
+    return;
+  }
+
+  setRefining(true);
+  setError(""); 
+
+  try {
+    const res = await fetch('http://localhost:3001/api/ai/refine-event', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}` 
+      },
+      body: JSON.stringify({
+        title: formData.title,
+        description: formData.longDescription,
+        category: formData.category
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setFormData(prev => ({ ...prev, longDescription: data.refinedText }));
+      triggerHubbleNotif("AI Polished", "Gemini has enhanced your event details!");
+    } else {
+      setError(data.error || "AI service is currently unavailable.");
+    }
+  } catch (err) {
+    console.error("AI Fetch Error:", err);
+    setError("Connection error. Check if your server is running.");
+  } finally {
+    setRefining(false);
+  }
+};
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -205,20 +248,42 @@ export default function CreateEvent() {
 
               {/* Event Description */}
               <section className="space-y-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Descriptions</h3>
-                
-                <BoutiqInput label="Short Hook" value={formData.shortDescription} onChange={e => setFormData({...formData, shortDescription: e.target.value})} placeholder="A one-sentence pitch to grab attention" />
-                
-                <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start gap-4">
-                  <label className="text-sm text-gray-700 pt-2">Full Details</label>
-                  <textarea 
-                    className="w-full max-w-md h-32 rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35] resize-none"
-                    value={formData.longDescription}
-                    onChange={e => setFormData({...formData, longDescription: e.target.value})}
-                    placeholder="Provide the complete agenda, prerequisites, or rules..."
-                  />
-                </div>
-              </section>
+  <h3 className="text-base font-semibold text-gray-900 mb-2">Descriptions</h3>
+  
+  <BoutiqInput 
+    label="Short Hook" 
+    value={formData.shortDescription} 
+    onChange={e => setFormData({...formData, shortDescription: e.target.value})} 
+    placeholder="A one-sentence pitch to grab attention" 
+  />
+  
+  <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start gap-4">
+    <label className="text-sm text-gray-700 pt-2">Full Details</label>
+    
+    <div className="w-full max-w-md space-y-2">
+      <textarea 
+        className="w-full h-40 rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35] resize-none"
+        value={formData.longDescription}
+        onChange={e => setFormData({...formData, longDescription: e.target.value})}
+        placeholder="Provide the complete agenda, prerequisites, or rules..."
+      />
+      
+      {/* ✨ AI REFINE BUTTON */}
+      <button 
+        type="button"
+        onClick={handleAIRefine}
+        disabled={refining}
+        className="flex items-center gap-2 text-xs font-bold text-[#ff6b35] hover:text-[#e85a25] transition-colors disabled:opacity-50"
+      >
+        {refining ? (
+          <><i className="fi fi-rr-loading animate-spin"></i> AI is polishing...</>
+        ) : (
+          <><i className="fi fi-rr-magic-wand"></i> Refine with AI</>
+        )}
+      </button>
+    </div>
+  </div>
+</section>
 
               <hr className="border-gray-200" />
 

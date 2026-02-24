@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
-import TopBar from '../components/TopBar'; // Integrates the navigation bar
+import TopBar from '../components/TopBar'; 
 import { triggerHubbleNotif } from '../utils/notify'; 
+
 const CATEGORIES = ["Technical", "Cultural", "Sports", "Literary", "Entrepreneurship", "Social Service", "Other"];
 
 export default function CreateSociety() {
@@ -16,10 +17,14 @@ export default function CreateSociety() {
     collegeName: '', presidentName: '',
     insta: '', mail: '', linkedin: ''
   });
+  
   const [logo, setLogo] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  // Fetch User for Sidebar and TopBar
+  // --- TEAM MANAGEMENT STATE ---
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminList, setAdminList] = useState([]); // Array of strings (emails)
+
   useEffect(() => {
     fetch('http://localhost:3001/api/users/me/profile', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -29,6 +34,7 @@ export default function CreateSociety() {
     .catch(err => console.error("Profile Fetch Error:", err));
   }, []);
 
+  // --- HANDLERS ---
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -36,17 +42,11 @@ export default function CreateSociety() {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setError("Only image files (JPG, PNG, WEBP) are allowed!");
-      setLogo(null);
-      setPreview(null);
-      e.target.value = null; 
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
       setError("File is too large! Max limit is 10MB.");
-      setLogo(null);
-      setPreview(null);
-      e.target.value = null;
       return;
     }
 
@@ -58,8 +58,24 @@ export default function CreateSociety() {
   const removeLogo = () => {
     setLogo(null);
     setPreview(null);
+    document.getElementById('logoInput').value = "";
+  };
+
+  // Logic to add email to the local list (Pre-creation)
+  const addAdminToList = (e) => {
+    e.preventDefault();
+    if (!adminEmail || !adminEmail.includes('@')) return;
+    if (adminList.includes(adminEmail)) {
+      setError("This student is already in the list!");
+      return;
+    }
+    setAdminList([...adminList, adminEmail]);
+    setAdminEmail("");
     setError("");
-    document.getElementById('logoInput').value = ""; // Reset file input
+  };
+
+  const removeAdminFromList = (emailToRemove) => {
+    setAdminList(adminList.filter(email => email !== emailToRemove));
   };
 
   const handleSubmit = async (e) => {
@@ -73,32 +89,33 @@ export default function CreateSociety() {
 
     setLoading(true);
     const data = new FormData();
+    
+    // Append all text fields
     Object.keys(formData).forEach(key => data.append(key, formData[key]));
+    
+    // Append the logo if exists
     if (logo) data.append('logo', logo);
+    
+    // 🔥 IMPORTANT: Append the team list as a JSON string for the backend to parse
+    data.append('admins', JSON.stringify(adminList));
 
     try {
       const res = await fetch('http://localhost:3001/api/societies/create', {
         method: 'POST',
         headers: { 
-          // Do NOT set Content-Type, browser sets it automatically with FormData boundaries
           Authorization: `Bearer ${localStorage.getItem('token')}` 
         },
         body: data 
       });
 
       if (res.ok) {
-        triggerHubbleNotif(
-      "Hub Activated", 
-      "Your society has been registered successfully! Start hosting events now."
-    );
-    
+        triggerHubbleNotif("Hub Activated", "Your society and team have been registered successfully!");
         navigate('/my-societies');
       } else {
         const errorData = await res.json();
         setError(`Error: ${errorData.error || "Failed to submit"}`);
       }
     } catch (err) {
-      console.error("Submission error:", err);
       setError("Network error. Is the server running?");
     } finally {
       setLoading(false);
@@ -106,16 +123,14 @@ export default function CreateSociety() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f3f6]  text-[#1a1a1a] font-sans">
-      <div className="mx-auto flex  gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
-        {/* Sidebar */}
+    <div className="min-h-screen bg-[#f1f3f6] text-[#1a1a1a] font-sans">
+      <div className="mx-auto flex gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
+        
         <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
            <Sidebar userRole={user?.role} />
         </div>
 
-        {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
-          
           <TopBar user={user} />
 
           <button 
@@ -126,7 +141,7 @@ export default function CreateSociety() {
           </button>
 
           <header className="mb-8">
-            <h1 className="text-3xl font-medium text-gray-900">Register Society</h1>
+            <h1 className="text-3xl font-medium text-gray-900 tracking-tight">Register Society</h1>
             <p className="text-sm text-gray-500 mt-1">Setup your organization's presence on MSIT Hubble.</p>
           </header>
 
@@ -139,7 +154,7 @@ export default function CreateSociety() {
           <div className="max-w-3xl pr-6 pb-20">
             <form onSubmit={handleSubmit} className="space-y-10 animate-in fade-in duration-500">
               
-              {/* Logo Upload Section */}
+              {/* Identity Section */}
               <section>
                 <h3 className="text-base font-semibold text-gray-900 mb-6">Society Identity</h3>
                 <div className="flex items-center gap-6">
@@ -151,41 +166,20 @@ export default function CreateSociety() {
                     )}
                   </div>
                   <div>
-                    <input 
-                      id="logoInput"
-                      type="file" 
-                      accept="image/png, image/jpeg, image/webp"
-                      onChange={handleLogoChange} 
-                      className="hidden" 
-                    />
+                    <input id="logoInput" type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                     <div className="flex items-center gap-3">
-                      <label 
-                        htmlFor="logoInput"
-                        className="cursor-pointer text-sm font-medium text-[#ff6b35] hover:text-[#e85a25]"
-                      >
-                        Upload Logo
-                      </label>
-                      {preview && (
-                        <button 
-                          type="button" 
-                          onClick={removeLogo} 
-                          className="text-sm font-medium text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          Remove
-                        </button>
-                      )}
+                      <label htmlFor="logoInput" className="cursor-pointer text-sm font-medium text-[#ff6b35] hover:text-[#e85a25]">Upload Logo</label>
+                      {preview && <button type="button" onClick={removeLogo} className="text-sm font-medium text-gray-400 hover:text-red-500">Remove</button>}
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">Recommended: Square format (1:1), PNG or JPG.</p>
                   </div>
                 </div>
               </section>
 
-              <hr className="border-gray-200" />
+              <hr className="border-gray-100" />
 
-              {/* Basic Information */}
+              {/* Basic Info */}
               <section className="space-y-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Basic Information</h3>
-                
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Details</h3>
                 <BoutiqInput label="Society Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Prakriti" required />
                 
                 <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
@@ -193,7 +187,7 @@ export default function CreateSociety() {
                   <select 
                     value={formData.category} 
                     onChange={e => setFormData({...formData, category: e.target.value})}
-                    className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35] bg-white"
+                    className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm bg-white outline-none focus:border-[#ff6b35]"
                   >
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -204,43 +198,71 @@ export default function CreateSociety() {
                   <textarea 
                     value={formData.description}
                     onChange={e => setFormData({...formData, description: e.target.value})}
-                    placeholder="What is your society about? What do you do?"
+                    placeholder="What is your society about?"
                     required
-                    className="w-full max-w-md h-32 rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition-colors focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35] resize-none"
+                    className="w-full max-w-md h-32 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#ff6b35] resize-none"
                   />
                 </div>
               </section>
 
-              <hr className="border-gray-200" />
+              <hr className="border-gray-100" />
 
-              {/* College & Administration */}
+              {/* TEAM SECTION (NEW & IMPROVED) */}
               <section className="space-y-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Administration</h3>
-                <BoutiqInput label="College Name" value={formData.collegeName} onChange={e => setFormData({...formData, collegeName: e.target.value})} placeholder="e.g. MSIT" />
-                <BoutiqInput label="President Name" value={formData.presidentName} onChange={e => setFormData({...formData, presidentName: e.target.value})} placeholder="Current Lead / President" />
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900">Add Core Team</h3>
+                  <p className="text-sm text-gray-500">Invite co-admins who will have management access alongside you.</p>
+                </div>
+
+                <div className="flex gap-3 max-w-md">
+                  <input 
+                    type="email"
+                    placeholder="Enter student email..."
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm outline-none focus:border-[#ff6b35]"
+                  />
+                  <button 
+                    type="button"
+                    onClick={addAdminToList}
+                    className="rounded-lg bg-black px-4 py-2 text-xs font-bold text-white hover:bg-gray-800"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {adminList.map(email => (
+                    <div key={email} className="flex items-center gap-2 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
+                      <span className="text-xs font-medium text-gray-700">{email}</span>
+                      <button type="button" onClick={() => removeAdminFromList(email)} className="text-gray-400 hover:text-red-500">
+                        <i className="fi fi-rr-cross-small text-lg"></i>
+                      </button>
+                    </div>
+                  ))}
+                  {adminList.length === 0 && <p className="text-xs text-gray-400 italic">No co-admins added yet.</p>}
+                </div>
               </section>
 
-              <hr className="border-gray-200" />
+              <hr className="border-gray-100" />
 
-              {/* Social Media Links */}
+              {/* Administration & Socials */}
               <section className="space-y-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Social & Contact Links</h3>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">Administration & Socials</h3>
+                <BoutiqInput label="President Name" value={formData.presidentName} onChange={e => setFormData({...formData, presidentName: e.target.value})} placeholder="Current Lead" />
                 <BoutiqInput label="Instagram URL" value={formData.insta} onChange={e => setFormData({...formData, insta: e.target.value})} placeholder="instagram.com/..." />
                 <BoutiqInput label="Official Mail" value={formData.mail} onChange={e => setFormData({...formData, mail: e.target.value})} placeholder="society@msit.in" type="email" />
                 <BoutiqInput label="LinkedIn URL" value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="linkedin.com/company/..." />
+              
               </section>
 
               <div className="pt-6">
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full max-w-md ml-0 md:ml-[166px] rounded-xl bg-[#ff6b35] px-6 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-[#e85a25] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                  className="w-full max-w-md ml-0 md:ml-[166px] rounded-xl bg-[#ff6b35] px-6 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-[#e85a25] transition-colors disabled:opacity-50"
                 >
-                  {loading ? 'Registering...' : (
-                    <>
-                      Register Society <i className="fi fi-rr-bank text-xs mt-0.5"></i>
-                    </>
-                  )}
+                  {loading ? 'Creating Hub...' : 'Register Society'}
                 </button>
               </div>
 
@@ -252,21 +274,13 @@ export default function CreateSociety() {
   );
 }
 
-/* --- BOUTIQ-STYLE HELPER COMPONENTS --- */
-
 function BoutiqInput({ label, value, onChange, placeholder, type = "text", required = false }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-      <label className="text-sm text-gray-700">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
+      <label className="text-sm text-gray-700">{label} {required && <span className="text-red-500">*</span>}</label>
       <input 
-        type={type} 
-        value={value} 
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]"
+        type={type} value={value} onChange={onChange} placeholder={placeholder} required={required}
+        className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-[#ff6b35]"
       />
     </div>
   );

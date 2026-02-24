@@ -1,4 +1,5 @@
-import { pgTable, serial, varchar, text, timestamp, integer,boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, timestamp, integer,boolean,unique } from "drizzle-orm/pg-core";
+
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -42,4 +43,15 @@ export const societies = pgTable("societies", {
   linkedinLink: text("linkedin_link"),
   logo: text("logo"), // Stores the image path or Base64 string
   ownerId: integer("owner_id").references(() => users.id),
+});
+
+export const societyManagers = pgTable('society_managers', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  societyId: integer('society_id').references(() => societies.id),
+}, (table) => {
+  return {
+    // This ensures a user can only be added to a specific society ONCE
+    unq: unique().on(table.userId, table.societyId),
+  };
 });

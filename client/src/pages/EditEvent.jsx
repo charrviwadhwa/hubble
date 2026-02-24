@@ -70,6 +70,42 @@ export default function EditEvent() {
     fetchEventDetails();
   }, [id]);
 
+  const [isGenerating, setIsGenerating] = useState(false);
+
+// 2. Add the function to call your backend:
+const handleGenerateAI = async () => {
+  if (!formData.description || formData.description.length < 5) {
+    alert("Please type a few words first (e.g., 'coding contest on Friday') so the AI has something to work with!");
+    return;
+  }
+
+  setIsGenerating(true);
+  try {
+    const res = await fetch('http://localhost:3001/api/ai/generate-description', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ prompt: formData.description }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // Update the description field with the AI-generated text
+      setFormData({ ...formData, description: data.description });
+      triggerHubbleNotif("AI Draft Ready", "We've polished your mission details.");
+    } else {
+      alert("AI Service is currently offline. Please try again later.");
+    }
+  } catch (err) {
+    console.error("AI Generation Error:", err);
+    alert("Connection error while reaching Hubble AI.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
   const handleBannerChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -211,14 +247,38 @@ export default function EditEvent() {
               <BoutiqInput label="Location / Venue" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="e.g. Main Auditorium" />
               
               <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start gap-4">
-                <label className="text-sm text-gray-700 font-medium pt-2">Description</label>
-                <textarea 
-                  className="w-full max-w-md h-32 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35] resize-none transition-all"
-                  value={formData.description}
-                  onChange={e => setFormData({...formData, description: e.target.value})}
-                  placeholder="Tell students what to expect..."
-                />
-              </div>
+  <div className="pt-2">
+    <label className="text-sm text-gray-700 font-medium">Description</label>
+  </div>
+  <div className="w-full max-w-md">
+    <div className="flex justify-end mb-2">
+      <button 
+        type="button"
+        onClick={handleGenerateAI}
+        disabled={isGenerating}
+        className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border-2 transition-all ${
+          isGenerating 
+          ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-wait' 
+          : 'bg-orange-50 border-[#ff6b35] text-[#ff6b35] hover:bg-[#ff6b35] hover:text-white shadow-[2px_2px_0px_0px_rgba(255,107,53,0.3)]'
+        }`}
+      >
+        <svg className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        {isGenerating ? 'Crafting...' : 'AI Refine'}
+      </button>
+    </div>
+    <textarea 
+      className="w-full h-48 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35] resize-none transition-all shadow-sm"
+      value={formData.description}
+      onChange={e => setFormData({...formData, description: e.target.value})}
+      placeholder="Type a brief idea here, then click AI Refine..."
+    />
+    <p className="mt-2 text-[10px] text-gray-400 font-medium italic">
+      Tip: Type a simple sentence like "hackathon with prizes" and let AI do the rest.
+    </p>
+  </div>
+</div>
             </section>
 
             <hr className="border-gray-100" />
