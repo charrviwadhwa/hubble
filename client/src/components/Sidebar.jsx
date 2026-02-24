@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 
-// 1. Helper component for SVGs (Adjusted stroke width for a sleeker look)
+// 1. Helper component for SVGs
 function Icon({ type }) {
-  const common = 'h-5 w-5 stroke-[1.5]';
+  const common = 'h-5 w-5 stroke-[2]'; // Thickened the strokes slightly to match the bolder aesthetic
 
   if (type === 'grid') {
     return <svg viewBox="0 0 24 24" fill="none" className={common}><rect x="4" y="4" width="6" height="6" stroke="currentColor" rx="1" /><rect x="14" y="4" width="6" height="6" stroke="currentColor" rx="1" /><rect x="4" y="14" width="6" height="6" stroke="currentColor" rx="1" /><rect x="14" y="14" width="6" height="6" stroke="currentColor" rx="1" /></svg>;
@@ -24,7 +24,7 @@ function Icon({ type }) {
 }
 
 const menuItems = [
-  { label: 'Overview', to: '/dashboard', icon: 'grid' }, // Renamed to match Boutiq style
+  { label: 'Overview', to: '/dashboard', icon: 'grid' }, 
   { label: 'Events', to: '/events', icon: 'spark' },
   { label: 'Societies', to: '/my-societies', icon: 'image' },
   { label: 'Profile', to: '/profile', icon: 'profile' },
@@ -37,43 +37,47 @@ export default function Sidebar({ userRole }) {
   return (
     <aside className="w-full lg:w-64 flex flex-col h-full min-h-[calc(100vh-2rem)] bg-transparent pt-2">
       
-      {/* 🔶 Brand Header (Styled like the Boutiq Logo) */}
-      <div className="mb-10 flex items-center gap-3 px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#ff6b35] to-[#e85a25] text-white shadow-sm">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-            <path d="M4 4h4v16H4V4zm12 0h4v16h-4V4zm-6 4h4v8h-4V8z" />
-          </svg>
-        </div>
-        <p className="text-xl font-bold tracking-tight text-gray-900">Hubble</p>
+      {/* 🟠 THE NEW HUBBLE BRAND HEADER (Matches Landing Page) */}
+      <div className="mb-12 flex items-center gap-2 px-6 pt-4">
+        {/* Soft pulse animation inline */}
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes pulse-soft {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+          }
+          .animate-pulse-soft { animation: pulse-soft 3s ease-in-out infinite; }
+        `}} />
+        <div className="w-4 h-4 bg-[#ff6b35] rounded-full animate-pulse-soft"></div>
+        <p className="text-3xl font-black tracking-tighter text-black">Hubble</p>
       </div>
 
       {/* 📋 Navigation Links */}
       <nav className="flex-1 space-y-2 px-3">
         {menuItems.map((item) => {
-          const isActive = location.pathname.includes(item.to); // .includes handles sub-routes
+          const isActive = location.pathname.includes(item.to); 
           return (
             <Link
               key={item.label}
               to={item.to}
               className="flex items-center gap-4 rounded-xl px-3 py-3 transition-colors group"
             >
-              {/* Icon Container - Changes to Orange Circle when active */}
+              {/* Icon Container - Active State */}
               <div 
-                className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 ${
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
                   isActive 
                     ? 'bg-[#ff6b35] text-white shadow-md shadow-[#ff6b35]/30' 
-                    : 'bg-transparent text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-600'
+                    : 'bg-transparent text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-900'
                 }`}
               >
                 <Icon type={item.icon} />
               </div>
               
-              {/* Label - Bold black when active, muted gray when inactive */}
+              {/* Label - Bolder font weights to match landing page aesthetic */}
               <span 
-                className={`text-sm tracking-wide transition-colors ${
+                className={`text-[15px] tracking-wide transition-colors ${
                   isActive 
-                    ? 'font-semibold text-gray-900' 
-                    : 'font-medium text-gray-500 group-hover:text-gray-900'
+                    ? 'font-black text-black' 
+                    : 'font-bold text-gray-500 group-hover:text-black'
                 }`}
               >
                 {item.label}
@@ -85,17 +89,20 @@ export default function Sidebar({ userRole }) {
 
       {/* 🚪 Bottom Section (Role & Sign Out) */}
       <div className="mt-auto px-6 pb-6 pt-10">
-        <div className="mb-4 rounded-2xl bg-gray-50 p-4 border border-gray-100 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Current Role</p>
-          <p className="text-sm font-semibold text-gray-800 capitalize">{userRole || 'Member'}</p>
+        
+        {/* Role Badge */}
+        <div className="mb-6 rounded-2xl bg-gray-50 p-4 border border-gray-200 text-center">
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Current Role</p>
+          <p className="text-sm font-bold text-black capitalize">{userRole || 'Member'}</p>
         </div>
         
+        {/* Sign Out Button */}
         <button
           onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 group"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-transparent text-gray-400 group-hover:text-red-600">
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-[1.5] stroke-currentColor text-inherit">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-transparent text-gray-400 group-hover:text-red-600">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-[2] stroke-currentColor text-inherit">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>

@@ -5,19 +5,18 @@ export default function HubbleLandingPage() {
   const navigate = useNavigate();
 
   // Navigation Handlers
-  const handleNavHome = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-  const handleNavSocieties = () => navigate('/societies'); // Update path as needed
-  const handleNavEvents = () => navigate('/events');       // Update path as needed
-  const handleNavAbout = () => {
-    // Example: Scroll to a specific section or navigate
-    const aboutSection = document.getElementById('about-section');
-    if (aboutSection) aboutSection.scrollIntoView({ behavior: 'smooth' });
+  const handleNavHome = () => navigate('/');
+  const handleNavFeatures = () => {
+    const featureSection = document.getElementById('features-section');
+    if (featureSection) featureSection.scrollIntoView({ behavior: 'smooth' });
   };
+  const handleNavSocieties = () => navigate('/societies');
+  const handleNavContact = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   
   const handleLogin = () => navigate('/login');
-  const handleSignup = () => navigate('/register');
-  const handleExploreHub = () => navigate('/dashboard'); 
-  const handleRegisterSociety = () => navigate('/create-society');
+  const handleSignup = () => navigate('/signup');
+  const handleExploreHub = () => navigate('/signup'); 
+  const handleRegisterSociety = () => navigate('/signup');
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 overflow-x-hidden selection:bg-[#ff6b35] selection:text-white">
@@ -76,34 +75,51 @@ export default function HubbleLandingPage() {
       {/* ======================= NAVBAR ======================= */}
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8 relative z-50">
         {/* Logo */}
-        <div 
-          onClick={handleNavHome}
-          className="text-3xl font-black tracking-tighter text-black flex items-center gap-2 hover:scale-105 transition-transform cursor-pointer"
-        >
+        <div onClick={handleNavHome} className="text-3xl font-black tracking-tighter text-black flex items-center gap-2 hover:scale-105 transition-transform cursor-pointer">
           <div className="w-5 h-5 bg-[#ff6b35] rounded-full animate-pulse-soft"></div>
           Hubble
         </div>
 
-        {/* Center Links */}
+        {/* Center Links - Updated for SaaS Flow */}
         <div className="hidden md:flex items-center gap-10 text-sm font-bold text-gray-900">
-          <button onClick={handleNavHome} className="border-b-4 border-[#ff6b35] pb-1">Home</button>
-          <button onClick={handleNavSocieties} className="hover:text-[#ff6b35] hover:-translate-y-1 transition-all pb-1 inline-block">Societies</button>
-          <button onClick={handleNavEvents} className="hover:text-[#ff6b35] hover:-translate-y-1 transition-all pb-1 inline-block">Events</button>
-          <button onClick={handleNavAbout} className="hover:text-[#ff6b35] hover:-translate-y-1 transition-all pb-1 inline-block">About</button>
+          <button 
+            onClick={handleNavHome} 
+            className="hover:text-[#ff6b35] hover:-translate-y-1 transition-all pb-1 inline-block focus:outline-none"
+          >
+            Home
+          </button>
+          <button 
+            onClick={handleNavFeatures} 
+            className="hover:text-[#ff6b35] hover:-translate-y-1 transition-all pb-1 inline-block focus:outline-none"
+          >
+            Features
+          </button>
+          <button 
+            onClick={handleNavSocieties} 
+            className={`hover:text-[#ff6b35] hover:-translate-y-1 transition-all pb-1 inline-block focus:outline-none ${window.location.pathname === '/societies' ? 'border-b-4 border-[#ff6b35]' : ''}`}
+          >
+            For Societies
+          </button>
+          <button 
+            onClick={handleNavContact} 
+            className="hover:text-[#ff6b35] hover:-translate-y-1 transition-all pb-1 inline-block focus:outline-none"
+          >
+            Contact
+          </button>
         </div>
 
         {/* Right Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          <button onClick={handleLogin} className="text-sm font-bold text-gray-900 hover:text-[#ff6b35] transition-colors">
+          <button onClick={() => navigate('/login')} className="text-sm font-bold text-gray-900 hover:text-[#ff6b35] transition-colors focus:outline-none">
             Log in
           </button>
-          <button onClick={handleSignup} className="rounded-xl bg-[#ff6b35] px-6 py-2.5 text-sm font-bold text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all">
+          <button onClick={() => navigate('/signup')} className="rounded-xl bg-[#ff6b35] px-6 py-2.5 text-sm font-bold text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all focus:outline-none">
             Sign up
           </button>
         </div>
 
         {/* Mobile Menu Icon */}
-        <button className="md:hidden text-black hover:text-[#ff6b35]">
+        <button className="md:hidden text-black hover:text-[#ff6b35] focus:outline-none">
           <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
       </nav>
@@ -165,7 +181,6 @@ export default function HubbleLandingPage() {
       {/* ======================= SCROLLING MARQUEE (SVG ICONS) ======================= */}
       <div className="w-full bg-[#ff6b35] border-y-4 border-black py-4 overflow-hidden flex whitespace-nowrap text-black font-black text-xl md:text-2xl uppercase tracking-widest mt-10">
         
-        {/* Render the Marquee track twice for endless scrolling */}
         {[1, 2].map((trackIndex) => (
           <div key={trackIndex} className="animate-marquee flex items-center" aria-hidden={trackIndex === 2 ? "true" : "false"}>
             {/* Item 1 */}
@@ -194,7 +209,7 @@ export default function HubbleLandingPage() {
       </div>
 
       {/* ======================= GRID FEATURES SECTION ======================= */}
-      <section id="about-section" className="mx-auto max-w-6xl px-6 py-20 pb-24 relative z-10 mt-10">
+      <section id="features-section" className="mx-auto max-w-6xl px-6 py-20 pb-24 relative z-10 mt-10">
         
         {/* Row 1: Two Column Mini Features */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-32 relative">
@@ -223,7 +238,7 @@ export default function HubbleLandingPage() {
             <p className="text-base font-medium text-gray-600 mb-6 leading-relaxed max-w-sm">
               Society leads can launch events instantly. Reach the entire campus body with a single click.
             </p>
-            <button onClick={handleNavEvents} className="bg-[#ff6b35] text-white border-2 border-black rounded-xl px-6 py-2.5 text-xs font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all">
+            <button onClick={handleLogin} className="bg-[#ff6b35] text-white border-2 border-black rounded-xl px-6 py-2.5 text-xs font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all">
               View Events
             </button>
           </div>
@@ -263,7 +278,6 @@ export default function HubbleLandingPage() {
             <h2 className="text-5xl md:text-6xl font-black text-black mb-4">Join the Hub</h2>
             <p className="text-black font-bold mb-10 text-xl max-w-sm">Don't miss out on the latest campus missions. Sign up today.</p>
             
-            {/* The Newsletter Form now redirects to Signup as a fun UX pattern */}
             <form 
               onSubmit={(e) => { e.preventDefault(); handleSignup(); }}
               className="flex w-full bg-white rounded-xl p-2 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] border-4 border-black focus-within:-translate-y-1 transition-transform"
@@ -298,7 +312,6 @@ export default function HubbleLandingPage() {
   );
 }
 
-// --- Helper Component for abstract floating shapes ---
 function Decoration({ className, type }) {
   if (type === 'circle') return <div className={`rounded-full bg-[#ff6b35] border-2 border-black ${className}`}></div>;
   if (type === 'square') return <div className={`bg-white border-4 border-black ${className}`}></div>;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/TopBar';
-import { triggerHubbleNotif } from '../utils/notify'; // Import the notification utility
+import { triggerHubbleNotif } from '../utils/notify'; 
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -27,7 +27,6 @@ export default function Settings() {
       const headers = { Authorization: `Bearer ${token}` };
       
       try {
-        // 1. Fetch User Profile
         const userRes = await fetch('http://localhost:3001/api/users/me/profile', { headers });
         const userData = await userRes.json();
         setUser(userData);
@@ -37,29 +36,22 @@ export default function Settings() {
           phone: userData.phone || '+91 ' 
         });
 
-        // 2. Fetch Societies you OWN
         const socRes = await fetch('http://localhost:3001/api/societies/my', { headers });
         const socData = await socRes.json();
         const mySocList = Array.isArray(socData) ? socData : [];
         setMySocieties(mySocList);
 
-        // 3. Fetch ALL events and filter bulletproof-style
         const eventRes = await fetch('http://localhost:3001/api/events', { headers });
         const eventData = await eventRes.json();
         
-        // 🔥 Get an array of IDs for the societies you own
         const mySocietyIds = mySocList.map(soc => Number(soc.id));
-        
-        // 🔥 Filter: Show event if you made it OR if it belongs to a society you own
         const filtered = eventData.filter(e => {
           const matchesSociety = mySocietyIds.includes(Number(e.societyId));
           const matchesCreator = Number(e.createdBy) === Number(userData.id);
           return matchesSociety || matchesCreator;
         });
 
-        // Sort them so the newest ones are at the top
         filtered.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-        
         setOrganizedEvents(filtered);
       } catch (err) {
         console.error("Data Fetch Error:", err);
@@ -80,12 +72,8 @@ export default function Settings() {
         body: JSON.stringify({ name: formData.name, phone: formData.phone }),
       });
       if (res.ok) {
-        alert("Account settings saved successfully!");
-        triggerHubbleNotif(
-    "System Synchronized", 
-    "Your account parameters have been updated successfully."
-  );
-}
+        triggerHubbleNotif("System Synchronized", "Your account parameters have been updated successfully.");
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -96,17 +84,20 @@ export default function Settings() {
   const tabs = ['Account Settings', 'My Societies', 'My Events'];
 
   return (
-    <div className="min-h-screen bg-[#f1f3f6]  text-[#1a1a1a] font-sans">
-      <div className="mx-auto flex  gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
+    <div className="min-h-screen bg-[#f1f3f6] text-[#1a1a1a] font-sans">
+      <div className="mx-auto flex gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
+        
+        {/* SIDEBAR */}
         <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
            <Sidebar userRole={user?.role} />
         </div>
 
-        <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
+        {/* MAIN CONTENT AREA */}
+        <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8 pr-2">
           <Navbar user={user} />
           
           <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 pr-6">
-            <h1 className="text-3xl font-medium text-gray-900">Settings</h1>
+            <h1 className="text-3xl font-medium text-gray-900 tracking-tight">Settings</h1>
             {currentTab === 'Account Settings' && (
               <button 
                 onClick={handleSaveAccount}
@@ -118,7 +109,8 @@ export default function Settings() {
             )}
           </header>
 
-          <div className="mb-10 border-b border-gray-200">
+          {/* CLEAN TABS */}
+          <div className="mb-10 border-b border-gray-200 pr-6">
             <div className="flex gap-8 overflow-x-auto">
               {tabs.map(tab => (
                 <button
@@ -150,7 +142,7 @@ export default function Settings() {
                 ACCOUNT SETTINGS TAB
             ========================================= */}
             {currentTab === 'Account Settings' && (
-              <div className="space-y-10 animate-in fade-in duration-500">
+              <div className="space-y-10 animate-in fade-in duration-300">
                 <section>
                   <h3 className="text-base font-semibold text-gray-900 mb-1">Profile Information</h3>
                   <p className="text-sm text-gray-500 mb-8">Manage your personal details and keep your contact info up to date.</p>
@@ -159,11 +151,11 @@ export default function Settings() {
                     <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
                       <label className="text-sm text-gray-700">Profile Picture</label>
                       <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold overflow-hidden">
+                        <div className="h-14 w-14 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-medium overflow-hidden border border-gray-200">
                            {user?.name ? user.name[0].toUpperCase() : 'U'}
                         </div>
-                        <button className="text-sm text-gray-500 hover:text-gray-800">Delete</button>
-                        <button className="text-sm text-[#ff6b35] hover:text-[#e85a25] font-medium">Update</button>
+                        <button className="text-sm text-gray-500 hover:text-gray-800 transition-colors">Delete</button>
+                        <button className="text-sm text-[#ff6b35] hover:text-[#e85a25] font-medium transition-colors">Update</button>
                       </div>
                     </div>
 
@@ -173,7 +165,7 @@ export default function Settings() {
                   </div>
                 </section>
 
-                <hr className="border-gray-200" />
+                <hr className="border-gray-100" />
 
                 <section>
                   <h3 className="text-base font-semibold text-gray-900 mb-1">Security</h3>
@@ -190,7 +182,7 @@ export default function Settings() {
                 MY SOCIETIES TAB
             ========================================= */}
             {currentTab === 'My Societies' && (
-              <div className="space-y-6 animate-in fade-in duration-500">
+              <div className="space-y-6 animate-in fade-in duration-300">
                 <h3 className="text-base font-semibold text-gray-900 mb-1">Manage Societies</h3>
                 <p className="text-sm text-gray-500 mb-6">Select a society to edit its details, roster, and settings.</p>
 
@@ -199,20 +191,20 @@ export default function Settings() {
                     <div 
                       key={soc.id} 
                       onClick={() => navigate(`/settings/societies/${soc.id}`)}
-                      className="group flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-[#ff6b35] hover:shadow-sm transition-all cursor-pointer bg-white"
+                      className="group flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-[#ff6b35]/50 hover:shadow-sm transition-all cursor-pointer bg-white"
                     >
                       <div className="flex items-center gap-4">
-                        <img src={`http://localhost:3001${soc.logo}`} alt="" className="h-10 w-10 rounded-lg object-cover bg-gray-50" />
+                        <img src={`http://localhost:3001${soc.logo}`} alt="" className="h-10 w-10 rounded-lg object-cover bg-gray-50 border border-gray-100" />
                         <div>
-                          <h4 className="text-sm font-semibold text-gray-900">{soc.name}</h4>
-                          <p className="text-xs text-gray-500">{soc.category}</p>
+                          <h4 className="text-sm font-medium text-gray-900">{soc.name}</h4>
+                          <p className="text-xs text-gray-500 mt-0.5">{soc.category}</p>
                         </div>
                       </div>
                       <div className="text-[#ff6b35] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 text-sm font-medium">
                         Edit <i className="fi fi-rr-arrow-right"></i>
                       </div>
                     </div>
-                  )) : <p className="text-sm text-gray-500 italic">You don't manage any societies yet.</p>}
+                  )) : <p className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-xl">You don't manage any societies yet.</p>}
                 </div>
               </div>
             )}
@@ -221,7 +213,7 @@ export default function Settings() {
                 MY EVENTS TAB
             ========================================= */}
             {currentTab === 'My Events' && (
-              <div className="space-y-6 animate-in fade-in duration-500">
+              <div className="space-y-6 animate-in fade-in duration-300">
                 <h3 className="text-base font-semibold text-gray-900 mb-1">Manage Events</h3>
                 <p className="text-sm text-gray-500 mb-6">Select any event linked to your account or societies to edit its details.</p>
 
@@ -232,12 +224,12 @@ export default function Settings() {
                     <div 
                       key={event.id} 
                       onClick={() => navigate(`/settings/events/${event.id}`)}
-                      className={`group flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-[#ff6b35] hover:shadow-sm transition-all cursor-pointer bg-white ${isPast ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                      className={`group flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-[#ff6b35]/50 hover:shadow-sm transition-all cursor-pointer bg-white ${isPast ? 'opacity-60' : ''}`}
                     >
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-sm font-semibold text-gray-900">{event.title}</h4>
-                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${isPast ? 'bg-gray-100 text-gray-500' : 'bg-[#ff6b35]/10 text-[#ff6b35]'}`}>
+                          <h4 className="text-sm font-medium text-gray-900">{event.title}</h4>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${isPast ? 'bg-gray-100 text-gray-500' : 'bg-orange-50 text-[#ff6b35]'}`}>
                             {isPast ? 'Past' : 'Upcoming'}
                           </span>
                         </div>
@@ -249,7 +241,7 @@ export default function Settings() {
                         Edit <i className="fi fi-rr-arrow-right"></i>
                       </div>
                     </div>
-                  )}) : <p className="text-sm text-gray-500 italic">You haven't created any events yet.</p>}
+                  )}) : <p className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-xl">You haven't created any events yet.</p>}
                 </div>
               </div>
             )}
@@ -261,6 +253,8 @@ export default function Settings() {
   );
 }
 
+// --- BOUTIQ COMPONENT HELPERS ---
+
 function BoutiqInput({ label, value, onChange, readOnly = false }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
@@ -270,8 +264,10 @@ function BoutiqInput({ label, value, onChange, readOnly = false }) {
         value={value} 
         onChange={onChange}
         readOnly={readOnly}
-        className={`w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors ${
-          readOnly ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]'
+        className={`w-full max-w-md rounded-lg border px-4 py-2.5 text-sm text-gray-900 outline-none transition-colors ${
+          readOnly 
+            ? 'bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed' 
+            : 'bg-white border-gray-200 focus:border-[#ff6b35] focus:ring-1 focus:ring-[#ff6b35]'
         }`}
       />
     </div>
@@ -285,9 +281,9 @@ function ToggleRow({ label, description, isOn, onToggle }) {
       <div>
         <button 
           onClick={onToggle}
-          className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${isOn ? 'bg-[#ff6b35]' : 'bg-gray-300'}`}
+          className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${isOn ? 'bg-[#ff6b35]' : 'bg-gray-200'}`}
         >
-          <div className={`absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform duration-300 ${isOn ? 'translate-x-5' : 'translate-x-0'}`} />
+          <div className={`absolute top-1 left-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${isOn ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
         <p className="text-xs text-gray-500 mt-2">{description}</p>
       </div>

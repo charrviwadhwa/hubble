@@ -16,6 +16,7 @@ import EventDescription from './pages/EventDescription';
 import EditSociety from './pages/EditSociety';
 import EditEvent from './pages/EditEvent';
 import Notifications from './pages/Notifications';
+import SocietiesPage from './pages/SocietiesPage';
 
 function App() {
   return (
@@ -85,6 +86,7 @@ function App() {
         <Route path="/settings/societies/:id" element={<EditSociety />} />
         <Route path="/settings/events/:id" element={<EditEvent />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/societies" element={<SocietiesPage />} />
 
         {/* Protected Personal Dashboard */}
         <Route
