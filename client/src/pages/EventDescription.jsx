@@ -18,7 +18,15 @@ export default function EventDescription() {
 
   const now = new Date();
   const deadline = event.registrationDeadline ? new Date(event.registrationDeadline) : null;
-  const isClosed = deadline && now > deadline;
+  const eventStart = event.startDate ? new Date(event.startDate) : null;
+
+  const deadlinePassed = deadline && now.getTime() > deadline.getTime();
+
+// 2. Check if the event has already started (is in the past)
+const eventStarted = eventStart && now.getTime() > eventStart.getTime();
+
+// 🟢 The final "Closed" state
+const isClosed = deadlinePassed || eventStarted;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -106,9 +114,7 @@ export default function EventDescription() {
     }
   };
 
-  const capacity = event.capacity || 100;
-  const attendees = event.attendeeCount || 0;
-  const isFull = attendees >= capacity;
+  
 
   return (
     <div className="min-h-screen bg-[#f1f3f6] text-[#1a1a1a] font-sans">
@@ -207,7 +213,6 @@ export default function EventDescription() {
                     value={event.startDate ? new Date(event.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''} 
                   />
                   <DetailRow icon="fi-rr-marker" label="Location" value={event.location || ''} />
-                  <DetailRow icon="fi-rr-users" label="Capacity" value={event.id ? `${attendees} / ${capacity} Joined` : ''} />
                 </div>
 
                 {/* Registration Deadline Countdown */}
@@ -225,21 +230,21 @@ export default function EventDescription() {
                 {/* Call to Action Button */}
                 <button 
                   onClick={handleApply}
-                  disabled={isRegistered || isFull || isClosed || !event.id}
+                  disabled={isRegistered  || isClosed || !event.id}
                   className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-semibold transition-all shadow-sm ${
                     isRegistered 
                       ? "bg-green-50 text-green-700 border border-green-200 cursor-default" 
-                      : (isFull || isClosed || !event.id)
+                      : (isClosed || !event.id)
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" 
                       : "bg-[#ff6b35] text-white hover:bg-[#e85a25] shadow-md"
                   }`}
                 >
                   <i className={`fi ${
                     isRegistered ? 'fi-rr-badge-check' : 
-                    (isFull || isClosed || !event.id) ? 'fi-rr-lock' : 
+                    (isClosed || !event.id) ? 'fi-rr-lock' : 
                     'fi-rr-paper-plane'
                   } text-base mt-0.5`}></i>
-                  {isRegistered ? "Applied Successfully" : isFull ? "Event is Full" : isClosed ? "Registration Closed" : "Apply Now"}
+                  {isRegistered ? "Applied Successfully" : isClosed ? "Registration Closed" : "Apply Now"}
                 </button>
 
               </div>

@@ -8,13 +8,22 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
   const [showPopup, setShowPopup] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const capacity = event.capacity || 100;
+  
   const attendees = event.attendeeCount || 0;
-  const isFull = attendees >= capacity;
+  
 
   const now = new Date();
   const deadline = event.registrationDeadline ? new Date(event.registrationDeadline) : null;
-  const isClosed = deadline && now > deadline;
+  const eventStart = event.startDate ? new Date(event.startDate) : null;
+
+  const deadlinePassed = deadline && now.getTime() > deadline.getTime();
+
+// 2. Check if the event has already started (is in the past)
+const eventStarted = eventStart && now.getTime() > eventStart.getTime();
+
+// 🟢 The final "Closed" state
+const isClosed = deadlinePassed || eventStarted;
+  
 
   const handleApply = async (e) => {
     e.stopPropagation(); 
@@ -25,7 +34,7 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
     }
 
     // Prevents double-clicks without changing the UI
-    if (isRegistered || loading || isFull) return;
+    if (isRegistered || loading || isClosed) return;
 
     setLoading(true);
     try {
@@ -51,10 +60,11 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
     );
       } else {
         const data = await res.json();
-        
+        triggerHubbleNotif("Registration Failed", data.message || "Failed to register for the event.");
       }
     } catch (err) {
       console.error("Registration error:", err);
+      triggerHubbleNotif("Network Error", "Failed to register due to network issues.");
     } finally {
       setLoading(false);
     }
@@ -125,23 +135,23 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
             
             <button 
               onClick={handleApply}
-              disabled={isRegistered || isFull || isClosed || loading}
+              disabled={isRegistered || isClosed || loading}
               className={`flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold transition-all ${
                 isRegistered 
                   ? "bg-green-50 text-green-700 border border-green-200 cursor-default" 
-                  : (isFull || isClosed)
+                  : (isClosed)
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" 
                   : "bg-[#ff6b35] text-white hover:bg-[#e85a25] shadow-sm"
               }`}
             >
               <i className={`fi ${
                 isRegistered ? 'fi-rr-check' : 
-                (isFull || isClosed) ? 'fi-rr-lock' : 
+                (isClosed) ? 'fi-rr-lock' : 
                 'fi-rr-plus'
               } mt-0.5`}></i>
               
               {/* Removed the "Wait..." text here */}
-              {isRegistered ? "Applied" : isClosed ? "Closed" : isFull ? "Full" : "Join"}
+              {isRegistered ? "Applied" : isClosed ? "Closed" : "Join"}
             </button>
           </div>
         </div>
