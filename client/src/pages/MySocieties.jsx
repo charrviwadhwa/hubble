@@ -123,7 +123,7 @@ export default function MySocieties() {
                       <i className="fi fi-rr-bank"></i>
                     </div>
                     <h2 className="text-base font-semibold text-gray-900">No Societies Found</h2>
-                    <p className="mt-1 max-w-sm text-sm text-gray-500">You aren't currently leading any societies at MSIT.</p>
+                    <p className="mt-1 max-w-sm text-sm text-gray-500">You aren't currently leading any societies.</p>
                   </div>
                 )}
               </div>

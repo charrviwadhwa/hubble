@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti'; // 🎊 Import confetti
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar'; 
 import { triggerHubbleNotif } from '../utils/notify'; 
@@ -11,6 +12,9 @@ export default function CreateSociety() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // 🟢 New state for the success popup
+  const [showPopup, setShowPopup] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '', category: 'Technical', description: '',
@@ -23,7 +27,7 @@ export default function CreateSociety() {
 
   // --- TEAM MANAGEMENT STATE ---
   const [adminEmail, setAdminEmail] = useState("");
-  const [adminList, setAdminList] = useState([]); // Array of strings (emails)
+  const [adminList, setAdminList] = useState([]); 
 
   useEffect(() => {
     fetch('http://localhost:3001/api/users/me/profile', {
@@ -61,7 +65,6 @@ export default function CreateSociety() {
     document.getElementById('logoInput').value = "";
   };
 
-  // Logic to add email to the local list (Pre-creation)
   const addAdminToList = (e) => {
     e.preventDefault();
     if (!adminEmail || !adminEmail.includes('@')) return;
@@ -90,13 +93,8 @@ export default function CreateSociety() {
     setLoading(true);
     const data = new FormData();
     
-    // Append all text fields
     Object.keys(formData).forEach(key => data.append(key, formData[key]));
-    
-    // Append the logo if exists
     if (logo) data.append('logo', logo);
-    
-    // 🔥 IMPORTANT: Append the team list as a JSON string for the backend to parse
     data.append('admins', JSON.stringify(adminList));
 
     try {
@@ -110,7 +108,17 @@ export default function CreateSociety() {
 
       if (res.ok) {
         triggerHubbleNotif("Hub Activated", "Your society and team have been registered successfully!");
-        navigate('/my-societies');
+        
+        // 🎉 Fire Confetti
+        confetti({
+          particleCount: 150, 
+          spread: 80, 
+          origin: { y: 0.6 },
+          colors: ['#ff6b35', '#ffffff', '#e85a25']
+        });
+        
+        // Show the popup instead of immediately navigating
+        setShowPopup(true);
       } else {
         const errorData = await res.json();
         setError(`Error: ${errorData.error || "Failed to submit"}`);
@@ -123,154 +131,181 @@ export default function CreateSociety() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f3f6] text-[#1a1a1a] font-sans">
-      <div className="mx-auto flex gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
-        
-        <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
-           <Sidebar userRole={user?.role} />
-        </div>
+    <>
+      <div className="min-h-screen bg-[#f1f3f6] text-[#1a1a1a] font-sans">
+        <div className="mx-auto flex gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
+          
+          <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
+             <Sidebar userRole={user?.role} />
+          </div>
 
-        <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
-          <TopBar user={user} />
+          <main className="flex-1 overflow-y-auto pt-4 pl-4 md:pl-8">
+            <TopBar user={user} />
 
-          <button 
-            onClick={() => navigate('/my-societies')}
-            className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-[#ff6b35] transition-colors"
-          >
-            <i className="fi fi-rr-arrow-left"></i> Back to Hubs
-          </button>
+            <button 
+              onClick={() => navigate('/my-societies')}
+              className="mb-6 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-[#ff6b35] transition-colors"
+            >
+              <i className="fi fi-rr-arrow-left"></i> Back to My Societies
+            </button>
 
-          <header className="mb-8">
-            <h1 className="text-3xl font-medium text-gray-900 tracking-tight">Register Society</h1>
-            <p className="text-sm text-gray-500 mt-1">Setup your organization's presence on MSIT Hubble.</p>
-          </header>
+            <header className="mb-8">
+              <h1 className="text-3xl font-medium text-gray-900 tracking-tight">Register Society</h1>
+              <p className="text-sm text-gray-500 mt-1">Setup your organization's presence on Hubble.</p>
+            </header>
 
-          {error && (
-            <div className="mb-8 max-w-3xl rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600 border border-red-100 flex items-center gap-2">
-              <i className="fi fi-rr-triangle-warning"></i> {error}
-            </div>
-          )}
+            {error && (
+              <div className="mb-8 max-w-3xl rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600 border border-red-100 flex items-center gap-2">
+                <i className="fi fi-rr-triangle-warning"></i> {error}
+              </div>
+            )}
 
-          <div className="max-w-3xl pr-6 pb-20">
-            <form onSubmit={handleSubmit} className="space-y-10 animate-in fade-in duration-500">
-              
-              {/* Identity Section */}
-              <section>
-                <h3 className="text-base font-semibold text-gray-900 mb-6">Society Identity</h3>
-                <div className="flex items-center gap-6">
-                  <div className="h-24 w-24 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
-                    {preview ? (
-                      <img src={preview} alt="Logo Preview" className="h-full w-full object-cover" />
-                    ) : (
-                      <i className="fi fi-rr-camera text-2xl text-gray-300"></i>
-                    )}
-                  </div>
-                  <div>
-                    <input id="logoInput" type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
-                    <div className="flex items-center gap-3">
-                      <label htmlFor="logoInput" className="cursor-pointer text-sm font-medium text-[#ff6b35] hover:text-[#e85a25]">Upload Logo</label>
-                      {preview && <button type="button" onClick={removeLogo} className="text-sm font-medium text-gray-400 hover:text-red-500">Remove</button>}
+            <div className="max-w-3xl pr-6 pb-20">
+              <form onSubmit={handleSubmit} className="space-y-10 animate-in fade-in duration-500">
+                
+                {/* Identity Section */}
+                <section>
+                  <h3 className="text-base font-semibold text-gray-900 mb-6">Society Identity</h3>
+                  <div className="flex items-center gap-6">
+                    <div className="h-24 w-24 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
+                      {preview ? (
+                        <img src={preview} alt="Logo Preview" className="h-full w-full object-cover" />
+                      ) : (
+                        <i className="fi fi-rr-camera text-2xl text-gray-300"></i>
+                      )}
+                    </div>
+                    <div>
+                      <input id="logoInput" type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+                      <div className="flex items-center gap-3">
+                        <label htmlFor="logoInput" className="cursor-pointer text-sm font-medium text-[#ff6b35] hover:text-[#e85a25]">Upload Logo</label>
+                        {preview && <button type="button" onClick={removeLogo} className="text-sm font-medium text-gray-400 hover:text-red-500">Remove</button>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </section>
+                </section>
 
-              <hr className="border-gray-100" />
+                <hr className="border-gray-100" />
 
-              {/* Basic Info */}
-              <section className="space-y-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Details</h3>
-                <BoutiqInput label="Society Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Prakriti" required />
-                
-                <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-                  <label className="text-sm text-gray-700">Category</label>
-                  <select 
-                    value={formData.category} 
-                    onChange={e => setFormData({...formData, category: e.target.value})}
-                    className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm bg-white outline-none focus:border-[#ff6b35]"
-                  >
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
+                {/* Basic Info */}
+                <section className="space-y-6">
+                  <h3 className="text-base font-semibold text-gray-900 mb-2">Details</h3>
+                  <BoutiqInput label="Society Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Prakriti" required />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+                    <label className="text-sm text-gray-700">Category</label>
+                    <select 
+                      value={formData.category} 
+                      onChange={e => setFormData({...formData, category: e.target.value})}
+                      className="w-full max-w-md rounded-lg border border-gray-300 px-4 py-2.5 text-sm bg-white outline-none focus:border-[#ff6b35]"
+                    >
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start gap-4">
-                  <label className="text-sm text-gray-700 pt-2">Description <span className="text-red-500">*</span></label>
-                  <textarea 
-                    value={formData.description}
-                    onChange={e => setFormData({...formData, description: e.target.value})}
-                    placeholder="What is your society about?"
-                    required
-                    className="w-full max-w-md h-32 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#ff6b35] resize-none"
-                  />
-                </div>
-              </section>
+                  <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-start gap-4">
+                    <label className="text-sm text-gray-700 pt-2">Description <span className="text-red-500">*</span></label>
+                    <textarea 
+                      value={formData.description}
+                      onChange={e => setFormData({...formData, description: e.target.value})}
+                      placeholder="What is your society about?"
+                      required
+                      className="w-full max-w-md h-32 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#ff6b35] resize-none"
+                    />
+                  </div>
+                </section>
 
-              <hr className="border-gray-100" />
+                <hr className="border-gray-100" />
 
-              {/* TEAM SECTION (NEW & IMPROVED) */}
-              <section className="space-y-6">
-                <div>
-                  <h3 className="text-base font-semibold text-gray-900">Add Core Team</h3>
-                  <p className="text-sm text-gray-500">Invite co-admins who will have management access alongside you.</p>
-                </div>
+                {/* TEAM SECTION */}
+                <section className="space-y-6">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900">Add Core Team</h3>
+                    <p className="text-sm text-gray-500">Invite co-admins who will have management access alongside you.</p>
+                  </div>
 
-                <div className="flex gap-3 max-w-md">
-                  <input 
-                    type="email"
-                    placeholder="Enter student email..."
-                    value={adminEmail}
-                    onChange={(e) => setAdminEmail(e.target.value)}
-                    className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm outline-none focus:border-[#ff6b35]"
-                  />
+                  <div className="flex gap-3 max-w-md">
+                    <div className="flex-1 relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i className="fi fi-rr-envelope"></i>
+                      </div>
+                      <input 
+                        type="email"
+                        placeholder="Enter student email..."
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-[#ff6b35]"
+                      />
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={addAdminToList}
+                      className="rounded-lg bg-black px-4 py-2.5 text-xs font-bold text-white hover:bg-gray-800 transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 max-w-md">
+                    {adminList.map(email => (
+                      <div key={email} className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full shadow-sm">
+                        <span className="text-xs font-medium text-gray-700">{email}</span>
+                        <button type="button" onClick={() => removeAdminFromList(email)} className="text-gray-400 hover:text-red-500 transition-colors">
+                          <i className="fi fi-rr-cross-small text-lg leading-none"></i>
+                        </button>
+                      </div>
+                    ))}
+                    {adminList.length === 0 && <p className="text-xs text-gray-400 italic">No co-admins added yet.</p>}
+                  </div>
+                </section>
+
+                <hr className="border-gray-100" />
+
+                {/* Administration & Socials */}
+                <section className="space-y-6">
+                  <h3 className="text-base font-semibold text-gray-900 mb-2">Administration & Socials</h3>
+                  <BoutiqInput label="President Name" value={formData.presidentName} onChange={e => setFormData({...formData, presidentName: e.target.value})} placeholder="Current Lead" />
+                  <BoutiqInput label="Instagram URL" value={formData.insta} onChange={e => setFormData({...formData, insta: e.target.value})} placeholder="instagram.com/..." />
+                  <BoutiqInput label="Official Mail" value={formData.mail} onChange={e => setFormData({...formData, mail: e.target.value})} placeholder="society@hubble.in" type="email" />
+                  <BoutiqInput label="LinkedIn URL" value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="linkedin.com/company/..." />
+                </section>
+
+                <div className="pt-6">
                   <button 
-                    type="button"
-                    onClick={addAdminToList}
-                    className="rounded-lg bg-black px-4 py-2 text-xs font-bold text-white hover:bg-gray-800"
+                    type="submit" 
+                    disabled={loading}
+                    className="w-full max-w-md ml-0 md:ml-[166px] rounded-xl bg-[#ff6b35] px-6 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-[#e85a25] transition-colors disabled:opacity-50"
                   >
-                    Add
+                    {loading ? 'Creating Hub...' : 'Register Society'}
                   </button>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {adminList.map(email => (
-                    <div key={email} className="flex items-center gap-2 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
-                      <span className="text-xs font-medium text-gray-700">{email}</span>
-                      <button type="button" onClick={() => removeAdminFromList(email)} className="text-gray-400 hover:text-red-500">
-                        <i className="fi fi-rr-cross-small text-lg"></i>
-                      </button>
-                    </div>
-                  ))}
-                  {adminList.length === 0 && <p className="text-xs text-gray-400 italic">No co-admins added yet.</p>}
-                </div>
-              </section>
-
-              <hr className="border-gray-100" />
-
-              {/* Administration & Socials */}
-              <section className="space-y-6">
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Administration & Socials</h3>
-                <BoutiqInput label="President Name" value={formData.presidentName} onChange={e => setFormData({...formData, presidentName: e.target.value})} placeholder="Current Lead" />
-                <BoutiqInput label="Instagram URL" value={formData.insta} onChange={e => setFormData({...formData, insta: e.target.value})} placeholder="instagram.com/..." />
-                <BoutiqInput label="Official Mail" value={formData.mail} onChange={e => setFormData({...formData, mail: e.target.value})} placeholder="society@msit.in" type="email" />
-                <BoutiqInput label="LinkedIn URL" value={formData.linkedin} onChange={e => setFormData({...formData, linkedin: e.target.value})} placeholder="linkedin.com/company/..." />
-              
-              </section>
-
-              <div className="pt-6">
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full max-w-md ml-0 md:ml-[166px] rounded-xl bg-[#ff6b35] px-6 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-[#e85a25] transition-colors disabled:opacity-50"
-                >
-                  {loading ? 'Creating Hub...' : 'Register Society'}
-                </button>
-              </div>
-
-            </form>
-          </div>
-        </main>
+              </form>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+
+      {/* 🟢 SUCCESS POPUP MODAL */}
+      {showPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-2xl animate-in zoom-in-95 duration-300 border border-gray-100">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-green-600 text-3xl border border-green-100">
+              <i className="fi fi-rr-check-circle"></i>
+            </div>
+            <h2 className="mb-2 text-2xl font-semibold text-gray-900">Hub Activated!</h2>
+            <p className="mb-8 text-sm text-gray-500 leading-relaxed">
+              <span className="font-semibold text-gray-800">{formData.name}</span> is now registered on Hubble. You can start creating events and managing your team.
+            </p>
+            <button 
+              onClick={() => navigate('/settings')}
+              className="w-full rounded-xl bg-gray-900 py-3 text-sm font-medium text-white transition-colors hover:bg-black shadow-md"
+            >
+              Go to Settings
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

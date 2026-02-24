@@ -41,7 +41,7 @@ export default function Profile() {
 
           <header className="mb-8 pr-6">
             <h1 className="text-3xl font-medium text-gray-900">Student Profile</h1>
-            <p className="text-sm text-gray-500 mt-1">View your MSIT journey, achievements, and statistics.</p>
+            <p className="text-sm text-gray-500 mt-1">View your journey, achievements, and statistics.</p>
           </header>
 
           <div className="max-w-4xl pr-6 pb-20 space-y-10">

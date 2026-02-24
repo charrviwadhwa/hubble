@@ -13,7 +13,7 @@ export default function Signup() {
     e.preventDefault();
 
     if (!role) {
-      alert("Please select a role (Student or Society)");
+      
       return;
     }
 
@@ -34,13 +34,13 @@ export default function Signup() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Signup successful! Please login.');
+        
         navigate('/login');
       } else {
-        alert(data.message || 'Signup failed');
+        
       }
     } catch {
-      alert('Server is down. Check if your Node.js app is running on 3001.');
+      
     }
   };
 
@@ -134,7 +134,7 @@ export default function Signup() {
                   type="email"
                   required
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@student.msit.in"
+                  placeholder="name@student.in"
                   className="w-full rounded-xl border-4 border-black bg-white px-4 py-3 text-sm font-bold text-black outline-none transition-all placeholder-gray-400 focus:-translate-y-1 focus:shadow-[4px_4px_0px_0px_rgba(255,107,53,1)]"
                 />
               </div>

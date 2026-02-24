@@ -20,7 +20,7 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
     e.stopPropagation(); 
     
     if (isClosed) {
-      alert("Sorry, registration for this event has closed!");
+      
       return;
     }
 
@@ -51,7 +51,7 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
     );
       } else {
         const data = await res.json();
-        alert(data.message);
+        
       }
     } catch (err) {
       console.error("Registration error:", err);
@@ -111,7 +111,7 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
           
           <div className="mt-1.5 flex items-center gap-2 text-xs font-medium text-gray-500">
             <i className="fi fi-rr-marker"></i>
-            <span className="truncate">{event.location || 'MSIT Campus'}</span>
+            <span className="truncate">{event.location || 'Campus'}</span>
           </div>
 
           {/* Action Buttons */}
@@ -156,7 +156,7 @@ export default function EventCard({ event, onRefresh, isRegistered = false }) {
             </div>
             <h2 className="mb-2 text-2xl font-semibold text-gray-900">Spot Secured!</h2>
             <p className="mb-8 text-sm text-gray-500 leading-relaxed">
-              You are registered for <span className="font-semibold text-gray-800">{event.title}</span>. See you at MSIT!
+              You are registered for <span className="font-semibold text-gray-800">{event.title}</span>. See you there!
             </p>
             <button 
               onClick={() => setShowPopup(false)}

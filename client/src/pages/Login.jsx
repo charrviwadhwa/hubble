@@ -22,13 +22,13 @@ export default function Login() {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         // Optional: you can replace this alert with your cool Toast notification later!
-        alert('Login successful'); 
+        
         navigate('/dashboard');
       } else {
-        alert(data.message || 'Invalid credentials');
+        
       }
     } catch (error) {
-      alert('Connection error');
+      
     }
   };
 
@@ -110,7 +110,7 @@ export default function Login() {
                   type="email"
                   required
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@student.msit.in"
+                  placeholder="name@student.in"
                   className="w-full rounded-xl border-4 border-black bg-white px-4 py-3.5 text-sm font-bold text-black outline-none transition-all placeholder-gray-400 focus:-translate-y-1 focus:shadow-[4px_4px_0px_0px_rgba(255,107,53,1)]"
                 />
               </div>

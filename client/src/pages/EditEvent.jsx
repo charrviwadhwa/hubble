@@ -75,7 +75,6 @@ export default function EditEvent() {
 // 2. Add the function to call your backend:
 const handleGenerateAI = async () => {
   if (!formData.description || formData.description.length < 5) {
-    alert("Please type a few words first (e.g., 'coding contest on Friday') so the AI has something to work with!");
     return;
   }
 
@@ -97,11 +96,11 @@ const handleGenerateAI = async () => {
       setFormData({ ...formData, description: data.description });
       triggerHubbleNotif("AI Draft Ready", "We've polished your mission details.");
     } else {
-      alert("AI Service is currently offline. Please try again later.");
+      
     }
   } catch (err) {
     console.error("AI Generation Error:", err);
-    alert("Connection error while reaching Hubble AI.");
+   
   } finally {
     setIsGenerating(false);
   }

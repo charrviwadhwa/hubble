@@ -75,7 +75,7 @@ export default function EventDescription() {
     e.stopPropagation(); 
     
     if (isClosed) {
-      alert("Sorry, registration for this event has closed!");
+     
       return;
     }
 
@@ -98,10 +98,11 @@ export default function EventDescription() {
           confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff6b35', '#ffffff', '#e85a25'] });
         }
       } else {
-        alert(resData.message || "Registration failed");
+        triggerHubbleNotif("Registration Failed", resData.message || "Failed to register for the event.");
       }
     } catch (err) {
       console.error("Apply Error:", err);
+      triggerHubbleNotif("Network Error", "Failed to register due to network issues.");
     }
   };
 

@@ -21,5 +21,8 @@ app.use('/uploads', express.static('uploads'));
 app.use('/uploads/banners', express.static('uploads/banners'));
 app.get('/', (req, res) => res.send('Hubble Backend is Orbiting!'));
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 10000; // Render uses 10000 by default
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+});

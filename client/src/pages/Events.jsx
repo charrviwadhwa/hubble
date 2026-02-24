@@ -197,7 +197,7 @@ function NoSocietyPlaceholder({ onRegister }) {
         <div>
           <h2 className="text-base font-semibold text-gray-900">Unlock Event Creation</h2>
           <p className="mt-1 text-sm text-gray-500 max-w-lg">
-            You aren't currently leading any societies at MSIT. Register your organization to host and manage events.
+            You aren't currently leading any societies. Register your organization to host and manage events.
           </p>
         </div>
       </div>
