@@ -10,55 +10,46 @@ const router = express.Router();
 // 1. Get Profile (Protected)
 router.get('/me/profile', authenticateToken, async (req, res) => {
   try {
+    // 🔍 Only select columns that exist in your current schema.js
     const [user] = await db
       .select({
         id: users.id,
         name: users.name,
         email: users.email, 
         role: users.role,
-        phone: users.phone,
-        // 🟢 ADDED THE MISSING COLUMNS HERE
         branch: users.branch,
         year: users.year,
         github: users.github,
-        linkedin: users.linkedin,
-        leetcode: users.leetcode
+        linkedin: users.linkedin
       })
       .from(users)
       .where(eq(users.id, req.user.id));
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // 🟢 SAFER STATS CALCULATION
-    // Just fetch their registrations and count them in Javascript!
-    const myRegistrations = await db.select({
-      id: registrations.id,
-      attended: registrations.attended
-    })
-    .from(registrations)
-    .where(eq(registrations.userId, req.user.id));
-
-    const totalReg = myRegistrations.length;
-    const totalAtt = myRegistrations.filter(reg => reg.attended === true).length;
+    // Calculate stats safely
+    const myRegistrations = await db.select()
+      .from(registrations)
+      .where(eq(registrations.userId, req.user.id));
 
     res.json({
       ...user,
-      totalRegistrations: totalReg,
-      totalAttended: totalAtt,
-      xp: (totalReg * 100),
-      isOrganizer: user.role === 'admin'
+      totalRegistrations: myRegistrations.length,
+      totalAttended: myRegistrations.filter(reg => reg.attended).length,
+      isOrganizer: user.role === 'admin' || user.role === 'founder'
     });
   } catch (err) {
-    // 🔥 This will print the EXACT error in your Render terminal if it fails again
-    console.error("Profile Fetch Error Details:", err); 
-    res.status(500).json({ error: "Server error: " + err.message });
+    console.error("CRITICAL PROFILE ERROR:", err);
+    // 🟢 This sends the real error (e.g., "column leetcode does not exist") to the network tab
+    res.status(500).json({ error: err.message, stack: err.stack });
   }
 });
 
 // 2. Update Profile (Protected)
 // UPDATE USER PROFILE
+// 2. Update Profile
 router.patch('/me/profile', authenticateToken, async (req, res) => {
-  const { branch, year, github, linkedin, leetcode } = req.body;
+  const { branch, year, github, linkedin } = req.body; // 🟢 REMOVED: leetcode
 
   try {
     const [updatedUser] = await db.update(users)
@@ -66,23 +57,13 @@ router.patch('/me/profile', authenticateToken, async (req, res) => {
         branch, 
         year, 
         github, 
-        linkedin, 
-        leetcode 
+        linkedin 
       })
       .where(eq(users.id, req.user.id))
-      .returning({
-        id: users.id,
-        name: users.name,
-        branch: users.branch,
-        year: users.year,
-        github: users.github,
-        linkedin: users.linkedin,
-        leetcode: users.leetcode
-      });
+      .returning();
 
     res.json(updatedUser);
   } catch (err) {
-    console.error("Profile Update Error:", err);
     res.status(500).json({ error: "Failed to update profile." });
   }
 });
