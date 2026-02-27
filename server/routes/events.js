@@ -355,26 +355,23 @@ router.get('/certificate/:eventId', authMiddleware, async (req, res) => {
     const { eventId } = req.params;
     const userId = req.user.id; 
 
-    // 1. Fetch Registration joined with Event and Society
+    // 1. Fetch Registration with Event data
     const result = await db
       .select({
         userName: users.name,
         eventTitle: events.title,
-        societyName: societies.name,
-        societyLogo: societies.logo,
-        collegeName: societies.collegeName, // 🟢 Dynamic College from your Schema
+        societyName: events.societyName,
         registrationId: registrations.id,
         updatedAt: registrations.updatedAt,
       })
       .from(registrations)
       .innerJoin(users, eq(registrations.userId, users.id))
       .innerJoin(events, eq(registrations.eventId, events.id))
-      .innerJoin(societies, eq(events.societyName, societies.name)) // Join on society name
       .where(
         and(
           eq(registrations.eventId, eventId),
           eq(registrations.userId, userId),
-          eq(registrations.attended, true) // 🛡️ Security Check
+          eq(registrations.attended, true)
         )
       )
       .limit(1);
@@ -385,20 +382,29 @@ router.get('/certificate/:eventId', authMiddleware, async (req, res) => {
 
     const data = result[0];
 
-    // 2. Return the verified data
+    // 2. Fetch Society data separately to prevent Join-crashes
+    const societyData = await db
+      .select()
+      .from(societies)
+      .where(eq(societies.name, data.societyName))
+      .limit(1);
+
+    const society = societyData[0];
+
+    // 3. Send Response with fallback values for any college
     res.json({
       userName: data.userName,
       eventName: data.eventTitle,
       societyName: data.societyName,
-      societyLogo: data.societyLogo,
-      collegeName: data.collegeName, 
+      societyLogo: society?.logo || null,
+      collegeName: society?.collegeName || "Authorized Institution", // 🟢 Dynamic college from your schema
       issueDate: data.updatedAt,
       certId: `HUB-${data.registrationId.toString().slice(-8).toUpperCase()}`
     });
 
   } catch (err) {
-    console.error("Drizzle Error:", err);
-    res.status(500).json({ message: "Failed to generate certificate data." });
+    console.error("Drizzle/Neon Error:", err);
+    res.status(500).json({ message: "Internal Server Error. Check if society exists." });
   }
 });
 

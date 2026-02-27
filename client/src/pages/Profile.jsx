@@ -74,24 +74,20 @@ const downloadCertificate = async (event) => {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
     const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/certificate/${event.id}`, { headers });
     
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "Certificate unavailable.");
-    }
-
     const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.message || "Server Error");
 
-    // 🟢 Filling the state with dynamic data from your Drizzle query
     setCertData({ 
       eventName: data.eventName, 
       date: new Date(data.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       societyName: data.societyName,
       societyLogo: data.societyLogo ? `https://hubble-d9l6.onrender.com${data.societyLogo}` : null,
-      collegeName: data.collegeName, 
+      collegeName: data.collegeName, // 🟢 Caught from Drizzle 'societies' table
       certId: data.certId
     });
 
-    // ... rest of your html2canvas logic
+    // ... (Your html2canvas/jsPDF logic)
   } catch (err) {
     triggerHubbleNotif("Error", err.message);
   } finally {
