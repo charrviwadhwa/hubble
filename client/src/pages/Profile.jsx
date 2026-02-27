@@ -74,20 +74,24 @@ const downloadCertificate = async (event) => {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
     const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/certificate/${event.id}`, { headers });
     
-    const data = await res.json();
-    
-    if (!res.ok) throw new Error(data.message || "Server Error");
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || "Failed to fetch certificate");
+    }
 
+    const data = await res.json();
+
+    // Set dynamic data for the hidden template
     setCertData({ 
       eventName: data.eventName, 
       date: new Date(data.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       societyName: data.societyName,
       societyLogo: data.societyLogo ? `https://hubble-d9l6.onrender.com${data.societyLogo}` : null,
-      collegeName: data.collegeName, // 🟢 Caught from Drizzle 'societies' table
+      collegeName: data.collegeName, // Pulled dynamically from societies table
       certId: data.certId
     });
 
-    // ... (Your html2canvas/jsPDF logic)
+    // Proceed to generate PDF with html2canvas/jsPDF...
   } catch (err) {
     triggerHubbleNotif("Error", err.message);
   } finally {

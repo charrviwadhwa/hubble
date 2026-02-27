@@ -350,12 +350,13 @@ router.patch('/:eventId/attendees/:userId/check-in', authenticateToken, async (r
   }
 });
 // GET /api/events/certificate/:eventId
-router.get('/certificate/:eventId', authMiddleware, async (req, res) => {
+router.get('/certificate/:eventId', authenticateToken, async (req, res) => {
   try {
     const { eventId } = req.params;
+    // req.user is now available thanks to your authenticateToken middleware
     const userId = req.user.id; 
 
-    // 1. Fetch Registration with Event data
+    // 1. Fetch registration details and verify attendance
     const result = await db
       .select({
         userName: users.name,
@@ -377,12 +378,12 @@ router.get('/certificate/:eventId', authMiddleware, async (req, res) => {
       .limit(1);
 
     if (result.length === 0) {
-      return res.status(403).json({ message: "Attendance not verified for this mission." });
+      return res.status(403).json({ message: "Attendance not verified." });
     }
 
     const data = result[0];
 
-    // 2. Fetch Society data separately to prevent Join-crashes
+    // 2. Fetch the Society to get the Dynamic College Name and Logo
     const societyData = await db
       .select()
       .from(societies)
@@ -391,20 +392,20 @@ router.get('/certificate/:eventId', authMiddleware, async (req, res) => {
 
     const society = societyData[0];
 
-    // 3. Send Response with fallback values for any college
+    // 3. Send dynamic payload to frontend
     res.json({
       userName: data.userName,
       eventName: data.eventTitle,
       societyName: data.societyName,
       societyLogo: society?.logo || null,
-      collegeName: society?.collegeName || "Authorized Institution", // 🟢 Dynamic college from your schema
+      collegeName: society?.collegeName || "Authorized Institution", // Dynamic from your schema
       issueDate: data.updatedAt,
       certId: `HUB-${data.registrationId.toString().slice(-8).toUpperCase()}`
     });
 
   } catch (err) {
-    console.error("Drizzle/Neon Error:", err);
-    res.status(500).json({ message: "Internal Server Error. Check if society exists." });
+    console.error("Backend Error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
