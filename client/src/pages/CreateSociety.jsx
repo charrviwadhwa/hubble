@@ -190,6 +190,11 @@ export default function CreateSociety() {
                 <section className="space-y-6">
                   <h3 className="text-base font-semibold text-gray-900 mb-2">Details</h3>
                   <BoutiqInput label="Society Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. Prakriti" required />
+                    <BoutiqInput label="College Name" value={formData.collegeName} onChange={e => setFormData({...formData, collegeName: e.target.value})} placeholder="e.g. XYZ University"
+                      type="text"
+                      name="collegeName"   // 🔥 THIS MUST MATCH EXACTLY
+                    
+                    />
                   
                   <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
                     <label className="text-sm text-gray-700">Category</label>
