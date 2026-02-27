@@ -1,20 +1,54 @@
 ﻿import React from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function HubbleLandingPage() {
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Close mobile menu on resize if switching to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setIsMenuOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Navigation Handlers
-  const handleNavHome = () => navigate('/');
+  const handleNavHome = () => {
+    setIsMenuOpen(false);
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleNavFeatures = () => {
+    setIsMenuOpen(false);
     const featureSection = document.getElementById('features-section');
     if (featureSection) featureSection.scrollIntoView({ behavior: 'smooth' });
   };
-  const handleNavSocieties = () => navigate('/societies');
-  const handleNavContact = () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+  const handleNavSocieties = () => {
+    setIsMenuOpen(false);
+    navigate('/societies');
+  };
+
+  const handleNavContact = () => {
+    setIsMenuOpen(false);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
+  const handleSignup = () => {
+    setIsMenuOpen(false);
+    navigate('/signup');
+  };
+  const handleLogin = () => {
+    setIsMenuOpen(false);
+    navigate('/login');
+  };
+
+  // Navigation Handlers
   
-  const handleLogin = () => navigate('/login');
-  const handleSignup = () => navigate('/signup');
   const handleExploreHub = () => navigate('/signup'); 
   const handleRegisterSociety = () => navigate('/signup');
 
@@ -119,9 +153,25 @@ export default function HubbleLandingPage() {
         </div>
 
         {/* Mobile Menu Icon */}
-        <button className="md:hidden text-black hover:text-[#ff6b35] focus:outline-none">
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+       <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)} 
+          className="md:hidden flex flex-col gap-1.5 z-[110] relative p-2"
+        >
+          <div className={`w-8 h-1 bg-black transition-all ${isMenuOpen ? 'rotate-45 translate-y-2.5' : ''}`}></div>
+          <div className={`w-8 h-1 bg-black transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></div>
+          <div className={`w-8 h-1 bg-black transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2.5' : ''}`}></div>
         </button>
+
+        {/* Mobile Menu Overlay */}
+        <div className={`fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center gap-8 transition-transform duration-500 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} md:hidden`}>
+           <button onClick={handleNavHome} className="text-4xl font-black hover:text-[#ff6b35]">Home</button>
+           <button onClick={handleNavFeatures} className="text-4xl font-black hover:text-[#ff6b35]">Features</button>
+           <button onClick={handleNavSocieties} className="text-4xl font-black hover:text-[#ff6b35]">Societies</button>
+           <div className="flex flex-col gap-4 w-full px-12 mt-8">
+             <button onClick={() => {navigate('/login'); setIsMenuOpen(false)}} className="w-full py-4 text-xl font-black border-4 border-black rounded-2xl">Log in</button>
+             <button onClick={handleSignup} className="w-full py-4 text-xl font-black bg-[#ff6b35] text-white border-4 border-black rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">Join Hubble</button>
+           </div>
+        </div>
       </nav>
 
       {/* ======================= HERO SECTION ======================= */}

@@ -349,6 +349,39 @@ router.patch('/:eventId/attendees/:userId/check-in', authenticateToken, async (r
     res.status(500).json({ error: "Failed to update attendance." });
   }
 });
+// GET /api/events/certificate/:eventId
+router.get('/certificate/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const userId = req.user.id; // From your auth middleware
+
+    // Validate that the user actually registered and attended
+    const registration = await Registration.findOne({ 
+      event: eventId, 
+      user: userId,
+      attended: true 
+    }).populate('event');
+
+    if (!registration) {
+      return res.status(403).json({ message: "Attendance not verified for this mission." });
+    }
+
+    // Fetch Society details for the logo and name
+    const society = await Society.findOne({ name: registration.event.societyName });
+
+    res.json({
+      userName: req.user.name,
+      eventName: registration.event.title,
+      societyName: registration.event.societyName || "Hubble Society",
+      societyLogo: society?.logo || null,
+      collegeName: society.collegeName, 
+      issueDate: registration.updatedAt,
+      certId: `HUB-${registration._id.toString().slice(-8).toUpperCase()}`
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to generate certificate data." });
+  }
+});
 
 
 // 8. GET SINGLE EVENT

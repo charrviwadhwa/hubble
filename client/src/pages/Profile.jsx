@@ -1,17 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import { triggerHubbleNotif } from '../utils/notify';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({ totalRegistered: 0, attended: 0, upcoming: 0 });
   const [pastEvents, setPastEvents] = useState([]);
-  
   const [isEditing, setIsEditing] = useState(false);
+  const [generatingId, setGeneratingId] = useState(null);
   const [formData, setFormData] = useState({
     name: '', branch: '', year: '', github: '', linkedin: ''
   });
+
+  // Certificate Refs & State
+  const certificateRef = useRef();
+  const [certData, setCertData] = useState({ 
+    eventName: '', 
+    date: '', 
+    societyName: '', 
+    societyLogo: '' 
+  });
+
+  const COLLEGE_NAME = "Maharaja Surajmal Institute of Technology";
 
   const fetchData = async () => {
     try {
@@ -52,6 +65,52 @@ export default function Profile() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const downloadCertificate = async (eventId) => {
+  setGeneratingId(eventId);
+  
+  try {
+    const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+    
+    // 1. Fetch verified data from your new backend route
+    const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/certificate/${eventId}`, { headers });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || "Certificate not available.");
+    }
+
+    const data = await res.json();
+
+    // 2. Set the data for the hidden template
+    setCertData({ 
+      eventName: data.eventName, 
+      date: new Date(data.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      societyName: data.societyName,
+      societyLogo: data.societyLogo ? `https://hubble-d9l6.onrender.com${data.societyLogo}` : null,
+      collegeName: data.collegeName,
+      certId: data.certId
+    });
+    
+    // 3. Trigger the PDF capture
+    setTimeout(async () => {
+      const element = certificateRef.current;
+      const canvas = await html2canvas(element, { scale: 3, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
+      pdf.save(`${data.eventName.replace(/\s+/g, '-')}-Hubble-Cert.pdf`);
+      
+      triggerHubbleNotif("Success", "Official Certificate Downloaded!");
+      setGeneratingId(null);
+    }, 1000);
+
+  } catch (err) {
+    console.error(err);
+    triggerHubbleNotif("Denied", err.message);
+    setGeneratingId(null);
+  }
+};
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     const cleanData = {
@@ -88,6 +147,65 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-[#f1f3f6] font-sans relative">
+      
+      {/* 🟢 HIDDEN CERTIFICATE TEMPLATE - Mosaic Branding */}
+      <div style={{ position: 'absolute', top: '-15000px', left: '0' }}>
+        <div 
+          ref={certificateRef}
+          style={{ 
+            width: '1123px', height: '794px', backgroundColor: '#ffffff', 
+            padding: '80px', display: 'flex', flexDirection: 'column', 
+            justifyContent: 'center', alignItems: 'center', position: 'relative', 
+            boxSizing: 'border-box', textAlign: 'center', border: '4px solid #000'
+          }}
+        >
+          {/* Mosaic Decorative Borders */}
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '60px', backgroundColor: '#ff6b35' }}></div>
+          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '60px', backgroundColor: '#000000' }}></div>
+
+          {/* Hubble Logo Top Left */}
+          <div style={{ position: 'absolute', top: '60px', left: '100px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '16px', height: '16px', backgroundColor: '#ff6b35', borderRadius: '50%' }}></div>
+            <p style={{ fontSize: '24px', fontWeight: '900', color: '#000', margin: 0 }}>Hubble</p>
+          </div>
+
+          <div style={{ marginBottom: '30px' }}>
+            <h1 style={{ fontSize: '80px', fontWeight: '900', color: '#000', margin: 0, letterSpacing: '6px' }}>CERTIFICATE</h1>
+            <p style={{ fontSize: '24px', fontWeight: '700', color: '#ff6b35', letterSpacing: '8px', textTransform: 'uppercase' }}>of achievement</p>
+          </div>
+
+          {/* In your hidden template wrapper */}
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '20px', color: '#6b7280' }}>This is proudly presented to</p>
+            <h2 style={{ fontSize: '72px', color: '#000', fontWeight: '900', borderBottom: '10px solid #ff6b35' }}>
+              {user?.name}
+            </h2>
+            <p style={{ fontSize: '22px', fontWeight: '800' }}>
+              Mission: <span style={{ color: '#ff6b35' }}>"{certData.eventName}"</span> <br/>
+              Organization: <span style={{ color: '#000' }}>{certData.societyName}</span> <br/>
+              Host: <span style={{ color: '#000' }}>{certData.collegeName}</span>
+            </p>
+          </div>
+          
+
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '60px', padding: '0 60px' }}>
+            <div style={{ textAlign: 'left' }}>
+              <p style={{ fontSize: '14px', fontWeight: '900', color: '#9ca3af', textTransform: 'uppercase', margin: 0 }}>Issue Date</p>
+              <p style={{ fontSize: '20px', fontWeight: '900', color: '#000', margin: 0 }}>{certData.date}</p>
+            </div>
+            
+            {certData.societyLogo && (
+               <img src={certData.societyLogo} style={{ height: '80px', width: '80px', objectFit: 'contain', border: '4px solid #000', borderRadius: '12px' }} alt="SocLogo" />
+            )}
+
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '14px', fontWeight: '900', color: '#9ca3af', textTransform: 'uppercase', margin: 0 }}>Verification ID</p>
+              <p style={{ fontSize: '16px', fontWeight: '800', color: '#ff6b35', margin: 0 }}>HUB-{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="mx-auto flex gap-6 rounded-2xl bg-white p-4 shadow-sm min-h-[90vh]">
         
         <div className="w-64 flex-shrink-0 hidden lg:block border-r border-gray-100 pr-4">
@@ -106,7 +224,6 @@ export default function Profile() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* LEFT COLUMN: THE ID CARD */}
             <div className="lg:col-span-4 space-y-6">
               <div className="bg-white rounded-3xl border border-gray-200 p-8 text-center shadow-sm relative overflow-hidden group">
                 <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-orange-50 text-[#ff6b35] hover:bg-[#ff6b35] hover:text-white flex items-center justify-center transition-colors z-10">
@@ -151,7 +268,6 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: DASHBOARD */}
             <div className="lg:col-span-8 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
@@ -162,8 +278,8 @@ export default function Profile() {
                   <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Attended</p>
                   <p className="text-3xl font-black text-gray-900 mt-1">{stats.attended}</p>
                 </div>
-                <div className="bg-gray-900 rounded-3xl p-6 shadow-sm">
-                  <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">Upcoming</p>
+                <div className="bg-[#ff6b35] rounded-3xl p-6 shadow-sm">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-white/70">Upcoming</p>
                   <p className="text-3xl font-black text-white mt-1">{stats.upcoming}</p>
                 </div>
               </div>
@@ -177,30 +293,33 @@ export default function Profile() {
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-gray-900">{event.title}</h4>
-                      <p className="text-xs font-medium text-gray-500 mt-0.5">{event.eventType || "Event"}</p>
+                      <p className="text-xs font-medium text-gray-500 mt-0.5">{event.societyName || "Event"}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end gap-2">
                       {event.attended ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider">
-                          <i className="fi fi-rr-check text-[8px]"></i> Attended
-                        </span>
+                        <>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider">
+                            <i className="fi fi-rr-check text-[8px]"></i> Attended
+                          </span>
+                          <button 
+                            disabled={generatingId === event.id}
+                            onClick={() => downloadCertificate(event)}
+                            className="text-[10px] font-black text-[#ff6b35] underline disabled:opacity-50"
+                          >
+                            {generatingId === event.id ? "Processing..." : "Download Cert"}
+                          </button>
+                        </>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-wider">
                           Absent
                         </span>
                       )}
-                      <p className="text-[11px] font-bold text-gray-400 mt-1.5">
+                      <p className="text-[11px] font-bold text-gray-400 mt-0.5">
                         {new Date(event.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                       </p>
                     </div>
                   </div>
                 ))}
-                {pastEvents.length === 0 && (
-                  <div className="py-10 text-center text-gray-400">
-                    <i className="fi fi-rr-ghost text-3xl mb-3 block opacity-50"></i>
-                    <p className="text-sm font-medium">No event history yet.</p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
