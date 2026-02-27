@@ -21,10 +21,10 @@ export default function Profile() {
     eventName: '', 
     date: '', 
     societyName: '', 
-    societyLogo: '' 
+    societyLogo: '' ,
+    collegeName: '',
   });
 
-  const COLLEGE_NAME = "Maharaja Surajmal Institute of Technology";
 
   const fetchData = async () => {
     try {
@@ -65,40 +65,41 @@ export default function Profile() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const downloadCertificate = async (eventId) => {
+  // Inside downloadCertificate in Profile.jsx
+
+const downloadCertificate = async (eventId) => {
   setGeneratingId(eventId);
   
   try {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
-    
-    // 1. Fetch verified data from your new backend route
     const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/certificate/${eventId}`, { headers });
     
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || "Certificate not available.");
+    // Check if the response is valid JSON
+    const contentType = res.headers.get("content-type");
+    if (!res.ok || !contentType || !contentType.includes("application/json")) {
+      throw new Error("Certificate data not found on server.");
     }
 
     const data = await res.json();
 
-    // 2. Set the data for the hidden template
+    // 🟢 Fill the template with backend-provided college name
     setCertData({ 
       eventName: data.eventName, 
       date: new Date(data.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       societyName: data.societyName,
       societyLogo: data.societyLogo ? `https://hubble-d9l6.onrender.com${data.societyLogo}` : null,
-      collegeName: data.collegeName,
+      collegeName: data.collegeName, // 🟢 Caught from backend
       certId: data.certId
     });
     
-    // 3. Trigger the PDF capture
+    // Trigger PDF generation...
     setTimeout(async () => {
       const element = certificateRef.current;
       const canvas = await html2canvas(element, { scale: 3, useCORS: true });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('l', 'mm', 'a4');
       pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
-      pdf.save(`${data.eventName.replace(/\s+/g, '-')}-Hubble-Cert.pdf`);
+      pdf.save(`${data.eventName.replace(/\s+/g, '-')}-Hubble-Certificate.pdf`);
       
       triggerHubbleNotif("Success", "Official Certificate Downloaded!");
       setGeneratingId(null);
@@ -106,7 +107,7 @@ export default function Profile() {
 
   } catch (err) {
     console.error(err);
-    triggerHubbleNotif("Denied", err.message);
+    triggerHubbleNotif("Error", err.message);
     setGeneratingId(null);
   }
 };

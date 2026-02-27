@@ -374,7 +374,7 @@ router.get('/certificate/:eventId', async (req, res) => {
       eventName: registration.event.title,
       societyName: registration.event.societyName || "Hubble Society",
       societyLogo: society?.logo || null,
-      collegeName: society.collegeName, 
+      collegeName: society?.collegeName, 
       issueDate: registration.updatedAt,
       certId: `HUB-${registration._id.toString().slice(-8).toUpperCase()}`
     });
