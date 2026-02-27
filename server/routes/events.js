@@ -353,10 +353,12 @@ router.patch('/:eventId/attendees/:userId/check-in', authenticateToken, async (r
 router.get('/certificate/:eventId', authenticateToken, async (req, res) => {
   try {
     const { eventId } = req.params;
-    // req.user is now available thanks to your authenticateToken middleware
-    const userId = req.user.id; 
+    const userId = req.user.id; // 🟢 Matches the decoded ID from middleware
 
-    // 1. Fetch registration details and verify attendance
+    if (!userId) {
+      return res.status(401).json({ message: "User ID missing from token" });
+    }
+
     const result = await db
       .select({
         userName: users.name,
@@ -364,13 +366,18 @@ router.get('/certificate/:eventId', authenticateToken, async (req, res) => {
         societyName: events.societyName,
         registrationId: registrations.id,
         updatedAt: registrations.updatedAt,
+        // 🟢 Pull these from the joined society table
+        collegeName: societies.collegeName,
+        societyLogo: societies.logo
       })
       .from(registrations)
       .innerJoin(users, eq(registrations.userId, users.id))
       .innerJoin(events, eq(registrations.eventId, events.id))
+      // 🟢 Use leftJoin so the query doesn't crash if the society entry is missing
+      .leftJoin(societies, eq(events.societyName, societies.name))
       .where(
         and(
-          eq(registrations.eventId, eventId),
+          eq(registrations.eventId, Number(eventId)), // Ensure eventId is a Number
           eq(registrations.userId, userId),
           eq(registrations.attended, true)
         )
@@ -378,33 +385,23 @@ router.get('/certificate/:eventId', authenticateToken, async (req, res) => {
       .limit(1);
 
     if (result.length === 0) {
-      return res.status(403).json({ message: "Attendance not verified." });
+      return res.status(403).json({ message: "Attendance not verified or mission not found." });
     }
 
     const data = result[0];
 
-    // 2. Fetch the Society to get the Dynamic College Name and Logo
-    const societyData = await db
-      .select()
-      .from(societies)
-      .where(eq(societies.name, data.societyName))
-      .limit(1);
-
-    const society = societyData[0];
-
-    // 3. Send dynamic payload to frontend
     res.json({
       userName: data.userName,
       eventName: data.eventTitle,
       societyName: data.societyName,
-      societyLogo: society?.logo || null,
-      collegeName: society?.collegeName || "Authorized Institution", // Dynamic from your schema
+      societyLogo: data.societyLogo,
+      collegeName: data.collegeName || "Authorized Institution",
       issueDate: data.updatedAt,
       certId: `HUB-${data.registrationId.toString().slice(-8).toUpperCase()}`
     });
 
   } catch (err) {
-    console.error("Backend Error:", err);
+    console.error("Drizzle Query Error:", err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
