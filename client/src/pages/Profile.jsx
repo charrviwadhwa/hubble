@@ -69,11 +69,15 @@ export default function Profile() {
 
 const downloadCertificate = async (event) => {
   setGeneratingId(event.id);
-  
+
   try {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
-    const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/certificate/${event.id}`, { headers });
-    
+
+    const res = await fetch(
+      `https://hubble-d9l6.onrender.com/api/events/certificate/${event.id}`,
+      { headers }
+    );
+
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.message || "Failed to fetch certificate");
@@ -81,17 +85,39 @@ const downloadCertificate = async (event) => {
 
     const data = await res.json();
 
-    // Set dynamic data for the hidden template
-    setCertData({ 
-      eventName: data.eventName, 
-      date: new Date(data.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+    setCertData({
+      eventName: data.eventName,
+      date: new Date(data.issueDate).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }),
       societyName: data.societyName,
-      societyLogo: data.societyLogo ? `https://hubble-d9l6.onrender.com${data.societyLogo}` : null,
-      collegeName: data.collegeName, // Pulled dynamically from societies table
+      societyLogo: data.societyLogo
+        ? `https://hubble-d9l6.onrender.com${data.societyLogo}`
+        : null,
+      collegeName: data.collegeName,
       certId: data.certId
     });
 
-    // Proceed to generate PDF with html2canvas/jsPDF...
+    setTimeout(async () => {
+      const canvas = await html2canvas(certificateRef.current, {
+        scale: 2,
+        useCORS: true
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "px",
+        format: [1123, 794]
+      });
+
+      pdf.addImage(imgData, "PNG", 0, 0, 1123, 794);
+      pdf.save(`${data.eventName}-Certificate.pdf`);
+    }, 500);
+
   } catch (err) {
     triggerHubbleNotif("Error", err.message);
   } finally {
@@ -188,7 +214,7 @@ const downloadCertificate = async (event) => {
 
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '14px', fontWeight: '900', color: '#9ca3af', textTransform: 'uppercase', margin: 0 }}>Verification ID</p>
-              <p style={{ fontSize: '16px', fontWeight: '800', color: '#ff6b35', margin: 0 }}>HUB-{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+              <p style={{ fontSize: '16px', fontWeight: '800', color: '#ff6b35', margin: 0 }}>{certData.certId}</p>
             </div>
           </div>
         </div>

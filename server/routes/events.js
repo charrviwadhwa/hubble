@@ -353,31 +353,27 @@ router.patch('/:eventId/attendees/:userId/check-in', authenticateToken, async (r
 router.get('/certificate/:eventId', authenticateToken, async (req, res) => {
   try {
     const { eventId } = req.params;
-    const userId = req.user.id; // 🟢 Matches the decoded ID from middleware
-
-    if (!userId) {
-      return res.status(401).json({ message: "User ID missing from token" });
-    }
+    const userId = req.user.id;
+    const eId = parseInt(eventId);
 
     const result = await db
       .select({
         userName: users.name,
         eventTitle: events.title,
-        societyName: events.societyName,
-        registrationId: registrations.id,
-        updatedAt: registrations.updatedAt,
-        // 🟢 Pull these from the joined society table
+        societyName: societies.name,      // 🟢 Get name from society table
+        societyLogo: societies.logo,
         collegeName: societies.collegeName,
-        societyLogo: societies.logo
+        registrationId: registrations.id,
+        issueDate: registrations.registeredAt,
       })
       .from(registrations)
       .innerJoin(users, eq(registrations.userId, users.id))
       .innerJoin(events, eq(registrations.eventId, events.id))
-      // 🟢 Use leftJoin so the query doesn't crash if the society entry is missing
-      .leftJoin(societies, eq(events.societyName, societies.name))
+      // 🟢 JOIN ON IDs: This matches your log output
+      .innerJoin(societies, eq(events.societyId, societies.id)) 
       .where(
         and(
-          eq(registrations.eventId, Number(eventId)), // Ensure eventId is a Number
+          eq(registrations.eventId, eId),
           eq(registrations.userId, userId),
           eq(registrations.attended, true)
         )
@@ -385,7 +381,7 @@ router.get('/certificate/:eventId', authenticateToken, async (req, res) => {
       .limit(1);
 
     if (result.length === 0) {
-      return res.status(403).json({ message: "Attendance not verified or mission not found." });
+      return res.status(403).json({ message: "Mission not verified." });
     }
 
     const data = result[0];
@@ -395,8 +391,8 @@ router.get('/certificate/:eventId', authenticateToken, async (req, res) => {
       eventName: data.eventTitle,
       societyName: data.societyName,
       societyLogo: data.societyLogo,
-      collegeName: data.collegeName || "Authorized Institution",
-      issueDate: data.updatedAt,
+      collegeName: data.collegeName, 
+      issueDate: data.issueDate,
       certId: `HUB-${data.registrationId.toString().slice(-8).toUpperCase()}`
     });
 
