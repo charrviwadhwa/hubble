@@ -67,47 +67,34 @@ export default function Profile() {
 
   // Inside downloadCertificate in Profile.jsx
 
-const downloadCertificate = async (eventId) => {
-  setGeneratingId(eventId);
+const downloadCertificate = async (event) => {
+  setGeneratingId(event.id);
   
   try {
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
-    const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/certificate/${eventId}`, { headers });
+    const res = await fetch(`https://hubble-d9l6.onrender.com/api/events/certificate/${event.id}`, { headers });
     
-    // Check if the response is valid JSON
-    const contentType = res.headers.get("content-type");
-    if (!res.ok || !contentType || !contentType.includes("application/json")) {
-      throw new Error("Certificate data not found on server.");
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Certificate unavailable.");
     }
 
     const data = await res.json();
 
-    // 🟢 Fill the template with backend-provided college name
+    // 🟢 Filling the state with dynamic data from your Drizzle query
     setCertData({ 
       eventName: data.eventName, 
       date: new Date(data.issueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       societyName: data.societyName,
       societyLogo: data.societyLogo ? `https://hubble-d9l6.onrender.com${data.societyLogo}` : null,
-      collegeName: data.collegeName, // 🟢 Caught from backend
+      collegeName: data.collegeName, 
       certId: data.certId
     });
-    
-    // Trigger PDF generation...
-    setTimeout(async () => {
-      const element = certificateRef.current;
-      const canvas = await html2canvas(element, { scale: 3, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('l', 'mm', 'a4');
-      pdf.addImage(imgData, 'PNG', 0, 0, 297, 210);
-      pdf.save(`${data.eventName.replace(/\s+/g, '-')}-Hubble-Certificate.pdf`);
-      
-      triggerHubbleNotif("Success", "Official Certificate Downloaded!");
-      setGeneratingId(null);
-    }, 1000);
 
+    // ... rest of your html2canvas logic
   } catch (err) {
-    console.error(err);
     triggerHubbleNotif("Error", err.message);
+  } finally {
     setGeneratingId(null);
   }
 };

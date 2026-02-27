@@ -350,35 +350,54 @@ router.patch('/:eventId/attendees/:userId/check-in', authenticateToken, async (r
   }
 });
 // GET /api/events/certificate/:eventId
-router.get('/certificate/:eventId', async (req, res) => {
+router.get('/certificate/:eventId', authMiddleware, async (req, res) => {
   try {
     const { eventId } = req.params;
-    const userId = req.user.id; // From your auth middleware
+    const userId = req.user.id; 
 
-    // Validate that the user actually registered and attended
-    const registration = await Registration.findOne({ 
-      event: eventId, 
-      user: userId,
-      attended: true 
-    }).populate('event');
+    // 1. Fetch Registration joined with Event and Society
+    const result = await db
+      .select({
+        userName: users.name,
+        eventTitle: events.title,
+        societyName: societies.name,
+        societyLogo: societies.logo,
+        collegeName: societies.collegeName, // 🟢 Dynamic College from your Schema
+        registrationId: registrations.id,
+        updatedAt: registrations.updatedAt,
+      })
+      .from(registrations)
+      .innerJoin(users, eq(registrations.userId, users.id))
+      .innerJoin(events, eq(registrations.eventId, events.id))
+      .innerJoin(societies, eq(events.societyName, societies.name)) // Join on society name
+      .where(
+        and(
+          eq(registrations.eventId, eventId),
+          eq(registrations.userId, userId),
+          eq(registrations.attended, true) // 🛡️ Security Check
+        )
+      )
+      .limit(1);
 
-    if (!registration) {
+    if (result.length === 0) {
       return res.status(403).json({ message: "Attendance not verified for this mission." });
     }
 
-    // Fetch Society details for the logo and name
-    const society = await Society.findOne({ name: registration.event.societyName });
+    const data = result[0];
 
+    // 2. Return the verified data
     res.json({
-      userName: req.user.name,
-      eventName: registration.event.title,
-      societyName: registration.event.societyName || "Hubble Society",
-      societyLogo: society?.logo || null,
-      collegeName: society?.collegeName, 
-      issueDate: registration.updatedAt,
-      certId: `HUB-${registration._id.toString().slice(-8).toUpperCase()}`
+      userName: data.userName,
+      eventName: data.eventTitle,
+      societyName: data.societyName,
+      societyLogo: data.societyLogo,
+      collegeName: data.collegeName, 
+      issueDate: data.updatedAt,
+      certId: `HUB-${data.registrationId.toString().slice(-8).toUpperCase()}`
     });
+
   } catch (err) {
+    console.error("Drizzle Error:", err);
     res.status(500).json({ message: "Failed to generate certificate data." });
   }
 });
