@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import './App.css'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -93,6 +93,7 @@ function App() {
 
    
       </Routes>
+      <Analytics />
     </Router>
   );
 }
